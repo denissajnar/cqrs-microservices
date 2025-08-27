@@ -1,0 +1,43 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: order-command-service
+  
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: orders_command
+      username: admin
+      password: password
+      authentication-database: admin
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: password
+    virtual-host: /
+
+app:
+  messaging:
+    exchange: orders.exchange
+    queue: orders.query.queue
+    routing-key: order.created
+
+logging:
+  level:
+    dev.denissajnar.command: DEBUG
+    org.springframework.amqp: INFO
+    org.springframework.data.mongodb: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

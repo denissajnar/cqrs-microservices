@@ -1,0 +1,14 @@
+spring:
+  # Actuator
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: health
+
+  # Logging for tests
+  logging:
+    level:
+      org.testcontainers: INFO
+      org.hibernate.SQL: INFO
+      dev.denissajnar.query: DEBUG
