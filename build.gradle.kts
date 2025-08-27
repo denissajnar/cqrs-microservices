@@ -1,11 +1,13 @@
 plugins {
     kotlin("jvm") version "2.2.0" apply false
     kotlin("plugin.spring") version "2.2.0" apply false
+    kotlin("plugin.jpa") version "2.2.0" apply false
     id("org.springframework.boot") version "4.0.0-SNAPSHOT" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
     id("org.hibernate.orm") version "7.1.0.Final" apply false
     id("com.google.protobuf") version "0.9.4" apply false
-    kotlin("plugin.jpa") version "2.2.0" apply false
+    id("org.graalvm.buildtools.native") version "0.11.0" apply false
+    id("org.asciidoctor.jvm.convert") version "3.3.2" apply false
 }
 
 allprojects {
@@ -20,6 +22,8 @@ allprojects {
 }
 
 subprojects {
+    extra["snippetsDir"] = file("build/generated-snippets")
+
     apply(plugin = "io.spring.dependency-management")
 
     configure<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension> {

@@ -56,7 +56,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
             .log().ifValidationFails()
             .statusCode(400)
             .contentType(ContentType.JSON)
-            .body("message", containsString("Customer ID must be positive"))
+            .body("details[0]", containsString("Customer ID must be positive"))
     }
 
     @Test
@@ -75,7 +75,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
             .log().ifValidationFails()
             .statusCode(400)
             .contentType(ContentType.JSON)
-            .body("message", containsString("Total amount must be positive"))
+            .body("details[0]", containsString("Total amount must be positive"))
     }
 
     @Test
@@ -114,7 +114,8 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
             .log().ifValidationFails()
             .statusCode(200)
             .contentType(ContentType.JSON)
-            .body("id", equalTo(orderId))
+            .body("id", notNullValue())
+            .body("id", not(equalTo(orderId))) // Update creates new command record (event sourcing)
             .body("customerId", equalTo(2))
             .body("totalAmount", equalTo(149.99f))
             .body("status", equalTo("CONFIRMED"))
@@ -157,7 +158,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
             .log().ifValidationFails()
             .statusCode(400)
             .contentType(ContentType.JSON)
-            .body("message", containsString("Customer ID must be positive"))
+            .body("details[0]", containsString("Customer ID must be positive"))
     }
 
     @Test

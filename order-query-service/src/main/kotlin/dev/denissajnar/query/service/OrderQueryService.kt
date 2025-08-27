@@ -47,7 +47,7 @@ class OrderQueryService(
      * @return list of order DTOs for the customer
      */
     fun getOrdersByCustomer(customerId: Long): List<OrderQueryDTO> =
-        this@OrderQueryService.orderQueryRepository.findByCustomerIdOrderByCreatedAtDesc(customerId)
+        orderQueryRepository.findByCustomerIdOrderByCreatedAtDesc(customerId)
             .toDTOs()
             .also { orders ->
                 logger.debug { "Found ${orders.size} orders for customer: $customerId" }

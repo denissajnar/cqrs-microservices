@@ -61,8 +61,10 @@ class OrderQueryController(
     fun getOrdersByCustomer(
         @Parameter(description = "Customer ID", example = "1")
         @RequestParam customerId: Long,
-    ): ResponseEntity<List<OrderQueryDTO>> =
-        ResponseEntity.ok(orderQueryService.getOrdersByCustomer(customerId))
+    ): ResponseEntity<List<OrderQueryDTO>> {
+        require(customerId >= 0) { "Customer ID must be positive" }
+        return ResponseEntity.ok(orderQueryService.getOrdersByCustomer(customerId))
+    }
 
     /**
      * Retrieves orders by status

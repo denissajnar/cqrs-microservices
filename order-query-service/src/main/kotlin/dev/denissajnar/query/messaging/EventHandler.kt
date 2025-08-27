@@ -80,20 +80,20 @@ class EventHandler(
     @RabbitListener(queues = [$$"${app.messaging.queue:orders.query.queue}"])
     fun handleOrderDeletedEvent(event: OrderDeletedEvent) {
         try {
-            logger.info { "Processing OrderDeletedEvent for order: ${event.historyId}" }
+            logger.info { "Processing OrderDeletedEvent for order: ${event.orderId}" }
 
             // Find and delete the order by historyId
-            val existingOrder = orderQueryRepository.findByHistoryId(event.historyId)
+            val existingOrder = orderQueryRepository.findByHistoryId(event.orderId)
             if (existingOrder != null) {
                 orderQueryRepository.delete(existingOrder)
-                logger.info { "Successfully deleted order with historyId: ${event.historyId}" }
+                logger.info { "Successfully deleted order with historyId: ${event.orderId}" }
             } else {
-                logger.warn { "Order not found for deletion with historyId: ${event.historyId}" }
+                logger.warn { "Order not found for deletion with historyId: ${event.orderId}" }
             }
 
-            logger.info { "Successfully processed OrderDeletedEvent for order: ${event.historyId}" }
+            logger.info { "Successfully processed OrderDeletedEvent for order: ${event.orderId}" }
         } catch (exception: Exception) {
-            logger.error { "Failed to process OrderDeletedEvent for order: ${event.historyId}" }
+            logger.error { "Failed to process OrderDeletedEvent for order: ${event.orderId}" }
             throw exception // Re-throw to trigger retry mechanism if configured
         }
     }

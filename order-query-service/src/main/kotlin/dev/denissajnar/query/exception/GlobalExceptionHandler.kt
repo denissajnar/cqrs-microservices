@@ -6,9 +6,11 @@ import jakarta.servlet.http.HttpServletRequest
 import org.springframework.dao.DataAccessException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
+import org.springframework.web.util.HtmlUtils
 
 /**
  * Global exception handler for the order query service
@@ -19,6 +21,33 @@ class GlobalExceptionHandler {
 
     companion object {
         private val logger = KotlinLogging.logger {}
+
+        /**
+         * Sanitizes user input to prevent XSS attacks
+         */
+        private fun sanitizeInput(input: String?): String {
+            return input?.let { HtmlUtils.htmlEscape(it) } ?: ""
+        }
+    }
+
+    /**
+     * Handles missing required request parameters
+     */
+    @ExceptionHandler(MissingServletRequestParameterException::class)
+    fun handleMissingParameterExceptions(
+        ex: MissingServletRequestParameterException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ErrorResponse> {
+        logger.warn { "Missing required parameter: ${ex.parameterName}" }
+
+        val response = ErrorResponse(
+            status = HttpStatus.BAD_REQUEST.value(),
+            error = "MISSING_PARAMETER",
+            message = "Required parameter '${sanitizeInput(ex.parameterName)}' is missing",
+            path = sanitizeInput(request.requestURI),
+        )
+
+        return ResponseEntity.badRequest().body(response)
     }
 
     /**
@@ -35,7 +64,7 @@ class GlobalExceptionHandler {
             status = HttpStatus.INTERNAL_SERVER_ERROR.value(),
             error = "DATABASE_ERROR",
             message = "Database query failed",
-            path = request.requestURI,
+            path = sanitizeInput(request.requestURI),
         )
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response)
@@ -52,22 +81,20 @@ class GlobalExceptionHandler {
         logger.warn { "Type mismatch error: ${ex.message}" }
 
         val message = when {
-            ex.requiredType?.isEnum == true -> "Invalid ${ex.name} value. Allowed values: ${
-                ex.requiredType?.enumConstants?.joinToString(
-                    ", ",
-                )
+            ex.requiredType?.isEnum == true -> "Invalid ${sanitizeInput(ex.name)} value. Allowed values: ${
+                ex.requiredType?.enumConstants?.joinToString(", ") { sanitizeInput(it.toString()) }
             }"
 
             ex.name == "orderId" -> "Invalid order ID format. Expected Long format."
             ex.name == "customerId" -> "Invalid customer ID. Expected positive number."
-            else -> "Invalid parameter format: ${ex.name}"
+            else -> "Invalid parameter format: ${sanitizeInput(ex.name)}"
         }
 
         val response = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
             error = "INVALID_PARAMETER",
             message = message,
-            path = request.requestURI,
+            path = sanitizeInput(request.requestURI),
         )
 
         return ResponseEntity.badRequest().body(response)
@@ -86,8 +113,8 @@ class GlobalExceptionHandler {
         val response = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
             error = "INVALID_ARGUMENT",
-            message = ex.message ?: "Invalid request parameter",
-            path = request.requestURI,
+            message = sanitizeInput(ex.message) ?: "Invalid request parameter",
+            path = sanitizeInput(request.requestURI),
         )
 
         return ResponseEntity.badRequest().body(response)
@@ -107,8 +134,8 @@ class GlobalExceptionHandler {
         val response = ErrorResponse(
             status = HttpStatus.NOT_FOUND.value(),
             error = "RESOURCE_NOT_FOUND",
-            message = ex.message ?: "Requested resource not found",
-            path = request.requestURI,
+            message = sanitizeInput(ex.message) ?: "Requested resource not found",
+            path = sanitizeInput(request.requestURI),
         )
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response)
@@ -128,7 +155,7 @@ class GlobalExceptionHandler {
             status = HttpStatus.INTERNAL_SERVER_ERROR.value(),
             error = "INTERNAL_ERROR",
             message = "An unexpected error occurred",
-            path = request.requestURI,
+            path = sanitizeInput(request.requestURI),
         )
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response)

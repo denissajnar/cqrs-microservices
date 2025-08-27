@@ -12,6 +12,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
+import org.springframework.web.util.HtmlUtils
 
 /**
  * Global exception handler for the order command service
@@ -22,6 +23,13 @@ class GlobalExceptionHandler {
 
     companion object {
         private val logger = KotlinLogging.logger {}
+
+        /**
+         * Sanitizes user input to prevent XSS attacks
+         */
+        private fun sanitizeInput(input: String?): String {
+            return input?.let { HtmlUtils.htmlEscape(it) } ?: ""
+        }
     }
 
     /**
@@ -35,7 +43,7 @@ class GlobalExceptionHandler {
         logger.warn { "Validation error: ${ex.message}" }
 
         val fieldErrors = ex.bindingResult.fieldErrors.map { fieldError ->
-            "${fieldError.field}: ${fieldError.defaultMessage}"
+            "${sanitizeInput(fieldError.field)}: ${sanitizeInput(fieldError.defaultMessage)}"
         }
 
         val response = ErrorResponse(
@@ -43,7 +51,7 @@ class GlobalExceptionHandler {
             error = "VALIDATION_ERROR",
             message = "Validation failed for request",
             details = fieldErrors,
-            path = request.requestURI,
+            path = sanitizeInput(request.requestURI),
         )
 
         return ResponseEntity.badRequest().body(response)
@@ -62,8 +70,8 @@ class GlobalExceptionHandler {
         val response = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
             error = "BUSINESS_ERROR",
-            message = ex.message ?: "Business logic validation failed",
-            path = request.requestURI,
+            message = sanitizeInput(ex.message) ?: "Business logic validation failed",
+            path = sanitizeInput(request.requestURI),
         )
 
         return ResponseEntity.badRequest().body(response)
@@ -79,14 +87,20 @@ class GlobalExceptionHandler {
     ): ResponseEntity<ErrorResponse> {
         logger.warn { "Business validation error: ${ex.message}" }
 
+        val sanitizedMessage = sanitizeInput(ex.message) ?: "Business rule validation failed"
+
+        // Check if this is a "not found" error and return 404, otherwise return 400
+        val isNotFoundError = sanitizedMessage.lowercase().contains("not found")
+        val status = if (isNotFoundError) HttpStatus.NOT_FOUND else HttpStatus.BAD_REQUEST
+
         val response = ErrorResponse(
-            status = HttpStatus.BAD_REQUEST.value(),
+            status = status.value(),
             error = "BUSINESS_VALIDATION_ERROR",
-            message = ex.message ?: "Business rule validation failed",
-            path = request.requestURI,
+            message = sanitizedMessage,
+            path = sanitizeInput(request.requestURI),
         )
 
-        return ResponseEntity.badRequest().body(response)
+        return ResponseEntity.status(status).body(response)
     }
 
     /**
@@ -103,7 +117,7 @@ class GlobalExceptionHandler {
             status = HttpStatus.INTERNAL_SERVER_ERROR.value(),
             error = "DATABASE_ERROR",
             message = "Database operation failed",
-            path = request.requestURI,
+            path = sanitizeInput(request.requestURI),
         )
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response)
@@ -123,7 +137,7 @@ class GlobalExceptionHandler {
             status = HttpStatus.INTERNAL_SERVER_ERROR.value(),
             error = "MESSAGING_ERROR",
             message = "Failed to publish event",
-            path = request.requestURI,
+            path = sanitizeInput(request.requestURI),
         )
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response)
@@ -143,7 +157,7 @@ class GlobalExceptionHandler {
             status = HttpStatus.BAD_REQUEST.value(),
             error = "INVALID_REQUEST",
             message = "Invalid request body format",
-            path = request.requestURI,
+            path = sanitizeInput(request.requestURI),
         )
 
         return ResponseEntity.badRequest().body(response)
@@ -162,8 +176,8 @@ class GlobalExceptionHandler {
         val response = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
             error = "INVALID_PARAMETER",
-            message = "Invalid parameter format: ${ex.name}",
-            path = request.requestURI,
+            message = "Invalid parameter format: ${sanitizeInput(ex.name)}",
+            path = sanitizeInput(request.requestURI),
         )
 
         return ResponseEntity.badRequest().body(response)
@@ -183,7 +197,7 @@ class GlobalExceptionHandler {
             status = HttpStatus.INTERNAL_SERVER_ERROR.value(),
             error = "INTERNAL_ERROR",
             message = "An unexpected error occurred",
-            path = request.requestURI,
+            path = sanitizeInput(request.requestURI),
         )
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response)
