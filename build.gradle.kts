@@ -1,11 +1,11 @@
 plugins {
-    kotlin("jvm") version "1.9.25" apply false
-    kotlin("plugin.spring") version "1.9.25" apply false
-    id("org.springframework.boot") version "3.5.5" apply false
+    kotlin("jvm") version "2.2.0" apply false
+    kotlin("plugin.spring") version "2.2.0" apply false
+    id("org.springframework.boot") version "4.0.0-SNAPSHOT" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
-    id("org.hibernate.orm") version "6.6.26.Final" apply false
+    id("org.hibernate.orm") version "7.1.0.Final" apply false
     id("com.google.protobuf") version "0.9.4" apply false
-    kotlin("plugin.jpa") version "1.9.25" apply false
+    kotlin("plugin.jpa") version "2.2.0" apply false
 }
 
 allprojects {
@@ -13,6 +13,7 @@ allprojects {
     version = "0.0.1-SNAPSHOT"
 
     repositories {
+        maven { url = uri("https://repo.spring.io/snapshot") }
         mavenCentral()
         gradlePluginPortal()
     }
@@ -23,7 +24,7 @@ subprojects {
 
     configure<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension> {
         imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:3.5.5")
+            mavenBom("org.springframework.boot:spring-boot-dependencies:4.0.0-SNAPSHOT")
             mavenBom("io.grpc:grpc-bom:1.75.0")
         }
         dependencies {
@@ -38,8 +39,8 @@ subprojects {
     }
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions {
-            jvmTarget = "21"
+        compilerOptions {
+            jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
         }
     }
 

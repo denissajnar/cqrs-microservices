@@ -4,7 +4,6 @@ import dev.denissajnar.shared.model.Status
 import jakarta.persistence.*
 import java.math.BigDecimal
 import java.time.Instant
-import java.util.*
 
 /**
  * JPA entity representing an order in the query side of CQRS
@@ -12,10 +11,14 @@ import java.util.*
  */
 @Entity
 @Table(name = "orders")
-class Order(
+class OrderQuery(
+
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null,
+
     @Column(length = 36)
-    var id: UUID? = null,
+    var historyId: String? = null,
 
     @Column(name = "customer_id", nullable = false)
     var customerId: Long = 0L,
@@ -28,5 +31,5 @@ class Order(
     var status: Status = Status.PENDING,
 
     @Column(name = "created_at", nullable = false)
-    var createdAt: Instant = Instant.now()
+    var createdAt: Instant = Instant.now(),
 )

@@ -1,22 +1,25 @@
 package dev.denissajnar.command.domain
 
 import dev.denissajnar.shared.model.Status
+import org.bson.types.ObjectId
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import java.math.BigDecimal
 import java.time.Instant
-import java.util.*
 
 /**
- * MongoDB document representing an order in the command side of CQRS
- * This is the write model for order operations
+ * MongoDB document representing a command/event in the order aggregate
+ * This is immutable - each operation creates a new document
  */
-@Document(collection = "orders")
+@Document(collection = "order_commands")
 data class OrderCommand(
     @Id
-    val id: UUID? = null,
+    val id: ObjectId = ObjectId.get(),
+    val commandType: CommandType,
+    val originalOrderId: ObjectId? = null,
     val customerId: Long,
     val totalAmount: BigDecimal,
     val status: Status = Status.PENDING,
-    val createdAt: Instant = Instant.now()
+    val createdAt: Instant = Instant.now(),
+    val version: Long = 1L,
 )

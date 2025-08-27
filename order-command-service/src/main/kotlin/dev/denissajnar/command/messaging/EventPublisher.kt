@@ -1,7 +1,7 @@
 package dev.denissajnar.command.messaging
 
 import dev.denissajnar.shared.events.DomainEvent
-import org.slf4j.LoggerFactory
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -13,13 +13,17 @@ import org.springframework.stereotype.Component
 @Component
 class EventPublisher(
     private val rabbitTemplate: RabbitTemplate,
-    @param:Value("\${app.messaging.exchange:orders.exchange}")
+
+    @param:Value($$"${app.messaging.exchange:orders.exchange}")
     private val exchange: String,
-    @param:Value("\${app.messaging.routing-key:order.created}")
-    private val routingKey: String
+
+    @param:Value($$"${app.messaging.routing-key:order.created}")
+    private val routingKey: String,
 ) {
 
-    private val logger = LoggerFactory.getLogger(EventPublisher::class.java)
+    companion object {
+        private val logger = KotlinLogging.logger {}
+    }
 
     /**
      * Publishes a domain event to RabbitMQ
@@ -28,9 +32,9 @@ class EventPublisher(
     fun publish(event: DomainEvent) {
         try {
             rabbitTemplate.convertAndSend(exchange, routingKey, event)
-            logger.info("Published event: ${event::class.simpleName} with ID: ${event.eventId}")
+            logger.info { "Published event: ${event::class.simpleName} with ID: ${event.eventId}" }
         } catch (exception: Exception) {
-            logger.error("Failed to publish event: ${event::class.simpleName} with ID: ${event.eventId}", exception)
+            logger.error { "Failed to publish event: ${event::class.simpleName} with ID: ${event.eventId}" }
             throw exception
         }
     }

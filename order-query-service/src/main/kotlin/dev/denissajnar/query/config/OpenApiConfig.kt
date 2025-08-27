@@ -8,16 +8,16 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 /**
- * OpenAPI configuration for the Order Query Service
+ * OpenAPI configuration for the OrderQuery Query Service
  * Provides Swagger UI documentation for the query side API
  */
 @Configuration
 @OpenAPIDefinition(
     info = Info(
-        title = "Order Query Service API",
+        title = "OrderQuery Query Service API",
         version = "v1",
-        description = "CQRS Query side for order management - handles read operations and processes events from command side"
-    )
+        description = "CQRS Query side for order management - handles read operations and processes events from command side",
+    ),
 )
 class OpenApiConfig {
 

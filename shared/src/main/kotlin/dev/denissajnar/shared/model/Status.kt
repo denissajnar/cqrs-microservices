@@ -1,12 +1,18 @@
 package dev.denissajnar.shared.model
 
 /**
- * Represents the possible states of an order.
+ * Represents the various statuses an order can have in the system.
  *
- * PENDING - The order is being processed or is awaiting completion.
- * COMPLETED - The order has been fully processed and finalized.
+ * The status transitions typically progress from PENDING to COMPLETED, with intermediate
+ * statuses indicating the current state of the order. Certain statuses such as CANCELLED
+ * or FAILED indicate a terminal state where the order cannot proceed further.
  */
 enum class Status {
     PENDING,
-    COMPLETED
+    CONFIRMED,
+    PROCESSING,
+    SHIPPED,
+    COMPLETED,
+    CANCELLED,
+    FAILED
 }

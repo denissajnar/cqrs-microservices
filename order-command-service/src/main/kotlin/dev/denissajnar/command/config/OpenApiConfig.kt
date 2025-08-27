@@ -16,8 +16,8 @@ import org.springframework.context.annotation.Configuration
     info = Info(
         title = "Order Command Service API",
         version = "v1",
-        description = "CQRS Command side for order management - handles write operations and publishes events"
-    )
+        description = "CQRS Command side for order management - handles write operations and publishes events",
+    ),
 )
 class OpenApiConfig {
 

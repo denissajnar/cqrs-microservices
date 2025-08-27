@@ -15,13 +15,13 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class RabbitConfig {
 
-    @Value("\${app.messaging.exchange:orders.exchange}")
+    @Value($$"${app.messaging.exchange:orders.exchange}")
     private lateinit var exchangeName: String
 
-    @Value("\${app.messaging.queue:orders.query.queue}")
+    @Value($$"${app.messaging.queue:orders.query.queue}")
     private lateinit var queueName: String
 
-    @Value("\${app.messaging.routing-key:order.created}")
+    @Value($$"${app.messaging.routing-key:order.created}")
     private lateinit var routingKey: String
 
     /**
@@ -51,13 +51,13 @@ class RabbitConfig {
      * Configures JSON message converter for RabbitMQ
      */
     @Bean
-    fun jsonMessageConverter(): Jackson2JsonMessageConverter = Jackson2JsonMessageConverter()
+    fun jacksonJsonMessageConverter(): Jackson2JsonMessageConverter = Jackson2JsonMessageConverter()
 
     /**
      * Configures RabbitTemplate with JSON converter
      */
     @Bean
     fun rabbitTemplate(connectionFactory: ConnectionFactory): RabbitTemplate = RabbitTemplate(connectionFactory).apply {
-        messageConverter = jsonMessageConverter()
+        messageConverter = jacksonJsonMessageConverter()
     }
 }
