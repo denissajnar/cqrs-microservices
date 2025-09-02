@@ -5,7 +5,6 @@ plugins {
     id("org.springframework.boot") version "4.0.0-SNAPSHOT" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
     id("org.hibernate.orm") version "7.1.0.Final" apply false
-    id("com.google.protobuf") version "0.9.4" apply false
     id("org.graalvm.buildtools.native") version "0.11.0" apply false
     id("org.asciidoctor.jvm.convert") version "3.3.2" apply false
 }
@@ -29,11 +28,6 @@ subprojects {
     configure<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension> {
         imports {
             mavenBom("org.springframework.boot:spring-boot-dependencies:4.0.0-SNAPSHOT")
-            mavenBom("io.grpc:grpc-bom:1.75.0")
-        }
-        dependencies {
-            dependency("com.google.protobuf:protobuf-kotlin:4.32.0")
-            dependency("io.grpc:grpc-kotlin-stub:1.4.3")
         }
     }
 
