@@ -35,9 +35,9 @@ interface OrderQueryRepository : CrudRepository<OrderQuery, Long> {
     fun findByStatus(status: Status): List<OrderQuery>
 
     /**
-     * Find order by history ID (from command side events)
-     * @param historyId the history identifier from command side
-     * @return the order with the given history ID or null if not found
+     * Find order by order ID (from command side events)
+     * @param orderId the order identifier from command side
+     * @return the order with the given order ID or null if not found
      */
-    fun findByHistoryId(historyId: String): OrderQuery?
+    fun findByOrderId(orderId: String): OrderQuery?
 }

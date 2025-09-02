@@ -9,7 +9,7 @@ import dev.denissajnar.query.entity.OrderQuery
  */
 fun OrderQuery.toDTO(): OrderQueryDTO = OrderQueryDTO(
     id = requireNotNull(this.id) { "OrderQuery ID cannot be null in response" },
-    historyId = requireNotNull(this.historyId) { "OrderQuery ID cannot be null in response" },
+    orderId = requireNotNull(this.orderId) { "OrderQuery orderId cannot be null in response" },
     customerId = this.customerId,
     totalAmount = this.totalAmount,
     status = this.status,

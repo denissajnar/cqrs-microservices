@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import dev.denissajnar.query.entity.InboxEvent
+import dev.denissajnar.query.entity.OrderQuery
 import dev.denissajnar.query.entity.ProcessingStatus
 import dev.denissajnar.query.repository.InboxEventRepository
 import dev.denissajnar.query.repository.OrderQueryRepository
@@ -141,30 +142,30 @@ class InboxEventProcessor(
             OrderOperationType.CREATE -> {
                 val orderEntity = createOrderEntityFromEvent(event)
                 orderQueryRepository.save(orderEntity)
-                logger.info { "Successfully created order with historyId: ${event.orderId}" }
+                logger.info { "Successfully created order with orderId: ${event.orderId}" }
             }
 
             OrderOperationType.UPDATE -> {
-                val existingOrder = orderQueryRepository.findByHistoryId(event.orderId)
+                val existingOrder = orderQueryRepository.findByOrderId(event.orderId)
                 if (existingOrder != null) {
                     event.customerId?.let { existingOrder.customerId = it }
                     event.totalAmount?.let { existingOrder.totalAmount = it }
                     event.status?.let { existingOrder.status = it }
                     orderQueryRepository.save(existingOrder)
-                    logger.info { "Successfully updated order with historyId: ${event.orderId}" }
+                    logger.info { "Successfully updated order with orderId: ${event.orderId}" }
                 } else {
-                    logger.error { "Order not found for historyId: ${event.orderId}" }
-                    throw IllegalStateException("Order not found for historyId: ${event.orderId}")
+                    logger.error { "Order not found for orderId: ${event.orderId}" }
+                    throw IllegalStateException("Order not found for orderId: ${event.orderId}")
                 }
             }
 
             OrderOperationType.DELETE -> {
-                val existingOrder = orderQueryRepository.findByHistoryId(event.orderId)
+                val existingOrder = orderQueryRepository.findByOrderId(event.orderId)
                 if (existingOrder != null) {
                     orderQueryRepository.delete(existingOrder)
-                    logger.info { "Successfully deleted order with historyId: ${event.orderId}" }
+                    logger.info { "Successfully deleted order with orderId: ${event.orderId}" }
                 } else {
-                    logger.warn { "Order not found for deletion with historyId: ${event.orderId}" }
+                    logger.warn { "Order not found for deletion with orderId: ${event.orderId}" }
                 }
             }
         }
@@ -173,10 +174,10 @@ class InboxEventProcessor(
     }
 
     private fun createOrderEntityFromEvent(event: OrderEvent) =
-        dev.denissajnar.query.entity.OrderQuery(
-            historyId = event.orderId,
-            customerId = event.customerId!!,
-            totalAmount = event.totalAmount!!,
-            status = event.status!!,
+        OrderQuery(
+            orderId = event.orderId,
+            customerId = requireNotNull(event.customerId) { "customerId is required for CREATE operation" },
+            totalAmount = requireNotNull(event.totalAmount) { "totalAmount is required for CREATE operation" },
+            status = requireNotNull(event.status) { "status is required for CREATE operation" },
         )
 }

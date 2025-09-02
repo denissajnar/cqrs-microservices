@@ -30,7 +30,7 @@ enum class OrderOperationType {
  * Field requirements by operation type:
  * - CREATE: orderId, customerId, totalAmount, status are required
  * - UPDATE: orderId is required, other fields are optional (only non-null values will be updated)
- * - DELETE: orderId, customerId, totalAmount, status are required (for audit purposes)
+ * - DELETE: only orderId is required
  */
 data class OrderEvent(
     override val eventId: String = UUID.randomUUID().toString(),
@@ -57,11 +57,7 @@ data class OrderEvent(
                 }
             }
 
-            OrderOperationType.DELETE -> {
-                require(customerId != null) { "customerId is required for DELETE operation" }
-                require(totalAmount != null) { "totalAmount is required for DELETE operation" }
-                require(status != null) { "status is required for DELETE operation" }
-            }
+            OrderOperationType.DELETE -> Unit
         }
     }
 }

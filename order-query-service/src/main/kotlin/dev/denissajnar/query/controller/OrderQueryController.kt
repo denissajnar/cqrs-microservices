@@ -96,36 +96,36 @@ class OrderQueryController(
     }
 
     /**
-     * Retrieves an order by its history ID
-     * @param historyId the history identifier from command side
+     * Retrieves an order by its order ID
+     * @param orderId the order identifier from command side
      * @return the order or 404 if not found
      */
-    @GetMapping("/history/{historyId}")
+    @GetMapping("/order/{orderId}")
     @Operation(
-        summary = "Get order by history ID",
-        description = "Retrieves order details using the history ID from the command side. The history ID is a UUID string that uniquely identifies an order across both command and query sides.",
+        summary = "Get order by order ID",
+        description = "Retrieves order details using the order ID from the command side. The order ID is a UUID string that uniquely identifies an order across both command and query sides.",
     )
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "Order found and retrieved successfully"),
-            ApiResponse(responseCode = "404", description = "Order not found with the given history ID"),
-            ApiResponse(responseCode = "400", description = "Invalid or blank history ID provided"),
+            ApiResponse(responseCode = "404", description = "Order not found with the given order ID"),
+            ApiResponse(responseCode = "400", description = "Invalid or blank order ID provided"),
             ApiResponse(responseCode = "500", description = "Internal server error"),
         ],
     )
-    fun getOrderByHistoryId(
+    fun getOrderByOrderId(
         @Parameter(
-            description = "History ID from command side (UUID format)",
+            description = "Order ID from command side (UUID format)",
             example = "550e8400-e29b-41d4-a716-446655440000",
         )
-        @PathVariable historyId: String,
+        @PathVariable orderId: String,
     ): ResponseEntity<OrderQueryDTO> {
         return try {
-            if (historyId.isBlank()) {
+            if (orderId.isBlank()) {
                 return ResponseEntity.badRequest().build()
             }
 
-            orderQueryService.findOrderByHistoryId(historyId)
+            orderQueryService.findOrderByOrderId(orderId)
                 ?.let { order -> ResponseEntity.ok(order) }
                 ?: ResponseEntity.notFound().build()
         } catch (_: IllegalArgumentException) {

@@ -79,19 +79,19 @@ class OrderQueryService(
             }
 
     /**
-     * Retrieves an order by its history ID
-     * @param historyId the history identifier from command side
+     * Retrieves an order by its order ID
+     * @param orderId the order identifier from command side
      * @return the order DTO or null if not found
      */
-    fun findOrderByHistoryId(historyId: String): OrderQueryDTO? =
-        orderQueryRepository.findByHistoryId(historyId)
+    fun findOrderByOrderId(orderId: String): OrderQueryDTO? =
+        orderQueryRepository.findByOrderId(orderId)
             ?.let { order ->
-                logger.debug { "Found order with history ID: $historyId" }
+                logger.debug { "Found order with order ID: $orderId" }
                 order.toDTO()
             }
             .also { result ->
                 if (result == null) {
-                    logger.debug { "OrderQuery not found with history ID: $historyId" }
+                    logger.debug { "OrderQuery not found with order ID: $orderId" }
                 }
             }
 

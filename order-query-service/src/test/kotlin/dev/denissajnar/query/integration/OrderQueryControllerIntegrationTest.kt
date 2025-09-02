@@ -252,7 +252,7 @@ class OrderQueryControllerIntegrationTest : SpringBootTestParent() {
 
         RestAssured.given()
             .whenever()
-            .get("/history/550e8400-e29b-41d4-a716-446655440000")
+            .get("/order/550e8400-e29b-41d4-a716-446655440000")
             .then()
             .statusCode(anyOf(equalTo(200), equalTo(404)))
     }
