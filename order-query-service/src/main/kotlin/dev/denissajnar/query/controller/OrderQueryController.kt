@@ -69,31 +69,26 @@ class OrderQueryController(
         @RequestParam(required = false) customerId: Long?,
         @Parameter(description = "Order status to filter by", example = "PENDING")
         @RequestParam(required = false) status: Status?,
-    ): ResponseEntity<List<OrderQueryDTO>> {
-        return try {
-            if (customerId != null && customerId < 0) {
-                return ResponseEntity.badRequest().build()
+    ): ResponseEntity<List<OrderQueryDTO>> =
+        when {
+            customerId != null && customerId < 0 -> ResponseEntity.badRequest().build()
+            else -> {
+                val orders = when {
+                    customerId != null && status != null ->
+                        orderQueryService.getOrdersByCustomerAndStatus(customerId, status)
+
+                    customerId != null ->
+                        orderQueryService.getOrdersByCustomer(customerId)
+
+                    status != null ->
+                        orderQueryService.getOrdersByStatus(status)
+
+                    else ->
+                        orderQueryService.getAllOrders()
+                }
+                ResponseEntity.ok(orders)
             }
-
-            val orders = when {
-                customerId != null && status != null ->
-                    orderQueryService.getOrdersByCustomerAndStatus(customerId, status)
-
-                customerId != null ->
-                    orderQueryService.getOrdersByCustomer(customerId)
-
-                status != null ->
-                    orderQueryService.getOrdersByStatus(status)
-
-                else ->
-                    orderQueryService.getAllOrders()
-            }
-
-            ResponseEntity.ok(orders)
-        } catch (_: IllegalArgumentException) {
-            ResponseEntity.badRequest().build()
         }
-    }
 
     /**
      * Retrieves an order by its order ID
@@ -119,17 +114,11 @@ class OrderQueryController(
             example = "550e8400-e29b-41d4-a716-446655440000",
         )
         @PathVariable orderId: String,
-    ): ResponseEntity<OrderQueryDTO> {
-        return try {
-            if (orderId.isBlank()) {
-                return ResponseEntity.badRequest().build()
-            }
-
-            orderQueryService.findOrderByOrderId(orderId)
+    ): ResponseEntity<OrderQueryDTO> =
+        when {
+            orderId.isBlank() -> ResponseEntity.badRequest().build()
+            else -> orderQueryService.findOrderByOrderId(orderId)
                 ?.let { order -> ResponseEntity.ok(order) }
                 ?: ResponseEntity.notFound().build()
-        } catch (_: IllegalArgumentException) {
-            ResponseEntity.badRequest().build()
         }
-    }
 }

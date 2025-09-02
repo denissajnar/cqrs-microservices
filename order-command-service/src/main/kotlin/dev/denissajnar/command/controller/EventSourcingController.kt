@@ -2,6 +2,8 @@ package dev.denissajnar.command.controller
 
 import dev.denissajnar.command.domain.OrderAggregate
 import dev.denissajnar.command.domain.OrderCommand
+import dev.denissajnar.command.dto.AggregateExistsDTO
+import dev.denissajnar.command.dto.AggregateVersionDTO
 import dev.denissajnar.command.service.EventSourcingService
 import dev.denissajnar.shared.model.AggregateStats
 import io.swagger.v3.oas.annotations.Operation
@@ -9,6 +11,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.constraints.Pattern
 import org.bson.types.ObjectId
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -44,17 +47,16 @@ class EventSourcingController(
     )
     fun reconstructAggregate(
         @Parameter(description = "Aggregate ID", example = "550e8400e29b41d4a716446655440000")
+        @Pattern(
+            regexp = "^[0-9a-fA-F]{24}$",
+            message = "Aggregate ID must be a valid 24-character hexadecimal ObjectId",
+        )
         @PathVariable aggregateId: String,
-    ): ResponseEntity<OrderAggregate> {
-        return try {
-            val objectId = ObjectId(aggregateId)
-            eventSourcingService.reconstructAggregate(objectId)
-                ?.let { ResponseEntity.ok(it) }
-                ?: ResponseEntity.notFound().build()
-        } catch (_: IllegalArgumentException) {
-            ResponseEntity.badRequest().build()
-        }
-    }
+    ): ResponseEntity<OrderAggregate> =
+        ObjectId(aggregateId)
+            .let(eventSourcingService::reconstructAggregate)
+            ?.let { ResponseEntity.ok(it) }
+            ?: ResponseEntity.notFound().build()
 
     /**
      * Gets the complete event history for an aggregate
@@ -73,16 +75,15 @@ class EventSourcingController(
     )
     fun getEventHistory(
         @Parameter(description = "Aggregate ID", example = "550e8400e29b41d4a716446655440000")
+        @Pattern(
+            regexp = "^[0-9a-fA-F]{24}$",
+            message = "Aggregate ID must be a valid 24-character hexadecimal ObjectId",
+        )
         @PathVariable aggregateId: String,
-    ): ResponseEntity<List<OrderCommand>> {
-        return try {
-            val objectId = ObjectId(aggregateId)
-            val events = eventSourcingService.getEventHistory(objectId)
-            ResponseEntity.ok(events)
-        } catch (_: IllegalArgumentException) {
-            ResponseEntity.badRequest().build()
-        }
-    }
+    ): ResponseEntity<List<OrderCommand>> =
+        ObjectId(aggregateId)
+            .let(eventSourcingService::getEventHistory)
+            .let { ResponseEntity.ok(it) }
 
     /**
      * Gets aggregate statistics for monitoring
@@ -102,17 +103,16 @@ class EventSourcingController(
     )
     fun getAggregateStats(
         @Parameter(description = "Aggregate ID", example = "550e8400e29b41d4a716446655440000")
+        @Pattern(
+            regexp = "^[0-9a-fA-F]{24}$",
+            message = "Aggregate ID must be a valid 24-character hexadecimal ObjectId",
+        )
         @PathVariable aggregateId: String,
-    ): ResponseEntity<AggregateStats> {
-        return try {
-            val objectId = ObjectId(aggregateId)
-            eventSourcingService.getAggregateStats(objectId)
-                ?.let { ResponseEntity.ok(it) }
-                ?: ResponseEntity.notFound().build()
-        } catch (_: IllegalArgumentException) {
-            ResponseEntity.badRequest().build()
-        }
-    }
+    ): ResponseEntity<AggregateStats> =
+        ObjectId(aggregateId)
+            .let(eventSourcingService::getAggregateStats)
+            ?.let { ResponseEntity.ok(it) }
+            ?: ResponseEntity.notFound().build()
 
     /**
      * Replays events for debugging purposes
@@ -132,17 +132,16 @@ class EventSourcingController(
     )
     fun replayEvents(
         @Parameter(description = "Aggregate ID", example = "550e8400e29b41d4a716446655440000")
+        @Pattern(
+            regexp = "^[0-9a-fA-F]{24}$",
+            message = "Aggregate ID must be a valid 24-character hexadecimal ObjectId",
+        )
         @PathVariable aggregateId: String,
-    ): ResponseEntity<OrderAggregate> {
-        return try {
-            val objectId = ObjectId(aggregateId)
-            eventSourcingService.replayEvents(objectId)
-                ?.let { ResponseEntity.ok(it) }
-                ?: ResponseEntity.notFound().build()
-        } catch (_: IllegalArgumentException) {
-            ResponseEntity.badRequest().build()
-        }
-    }
+    ): ResponseEntity<OrderAggregate> =
+        ObjectId(aggregateId)
+            .let(eventSourcingService::replayEvents)
+            ?.let { ResponseEntity.ok(it) }
+            ?: ResponseEntity.notFound().build()
 
     /**
      * Validates that an aggregate exists and is not deleted
@@ -161,16 +160,15 @@ class EventSourcingController(
     )
     fun validateAggregateExists(
         @Parameter(description = "Aggregate ID", example = "550e8400e29b41d4a716446655440000")
+        @Pattern(
+            regexp = "^[0-9a-fA-F]{24}$",
+            message = "Aggregate ID must be a valid 24-character hexadecimal ObjectId",
+        )
         @PathVariable aggregateId: String,
-    ): ResponseEntity<Map<String, Boolean>> {
-        return try {
-            val objectId = ObjectId(aggregateId)
-            val exists = eventSourcingService.validateAggregateExists(objectId)
-            ResponseEntity.ok(mapOf("exists" to exists))
-        } catch (_: IllegalArgumentException) {
-            ResponseEntity.badRequest().build()
-        }
-    }
+    ): ResponseEntity<AggregateExistsDTO> =
+        ObjectId(aggregateId)
+            .let(eventSourcingService::validateAggregateExists)
+            .let { ResponseEntity.ok(AggregateExistsDTO(it)) }
 
     /**
      * Gets the current state of an aggregate
@@ -190,18 +188,15 @@ class EventSourcingController(
     )
     fun getCurrentAggregateState(
         @Parameter(description = "Aggregate ID", example = "550e8400e29b41d4a716446655440000")
+        @Pattern(
+            regexp = "^[0-9a-fA-F]{24}$",
+            message = "Aggregate ID must be a valid 24-character hexadecimal ObjectId",
+        )
         @PathVariable aggregateId: String,
-    ): ResponseEntity<OrderAggregate> {
-        return try {
-            val objectId = ObjectId(aggregateId)
-            val currentState = eventSourcingService.getCurrentAggregateState(objectId)
-            ResponseEntity.ok(currentState)
-        } catch (_: IllegalArgumentException) {
-            ResponseEntity.notFound().build()
-        } catch (_: Exception) {
-            ResponseEntity.internalServerError().build()
-        }
-    }
+    ): ResponseEntity<OrderAggregate> =
+        ObjectId(aggregateId)
+            .let(eventSourcingService::getCurrentAggregateState)
+            .let { ResponseEntity.ok(it) }
 
     /**
      * Gets the latest version of an aggregate
@@ -221,18 +216,14 @@ class EventSourcingController(
     )
     fun getLatestVersion(
         @Parameter(description = "Aggregate ID", example = "550e8400e29b41d4a716446655440000")
+        @Pattern(
+            regexp = "^[0-9a-fA-F]{24}$",
+            message = "Aggregate ID must be a valid 24-character hexadecimal ObjectId",
+        )
         @PathVariable aggregateId: String,
-    ): ResponseEntity<Map<String, Long?>> {
-        return try {
-            val objectId = ObjectId(aggregateId)
-            val version = eventSourcingService.getLatestVersion(objectId)
-            if (version != null) {
-                ResponseEntity.ok(mapOf("version" to version))
-            } else {
-                ResponseEntity.notFound().build()
-            }
-        } catch (_: IllegalArgumentException) {
-            ResponseEntity.badRequest().build()
-        }
-    }
+    ): ResponseEntity<AggregateVersionDTO> =
+        ObjectId(aggregateId)
+            .let(eventSourcingService::getLatestVersion)
+            ?.let { ResponseEntity.ok(AggregateVersionDTO(it)) }
+            ?: ResponseEntity.notFound().build()
 }
