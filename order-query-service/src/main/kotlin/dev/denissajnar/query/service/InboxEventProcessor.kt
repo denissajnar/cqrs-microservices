@@ -44,25 +44,20 @@ class InboxEventProcessor(
     @Scheduled(fixedDelay = 30000)
     @Transactional
     fun processInboxEvents() {
-        try {
-            val unprocessedEvents = inboxEventRepository
-                .findByProcessingStatusInOrderByCreatedAtAsc(
-                    listOf(ProcessingStatus.DEFERRED, ProcessingStatus.FAILED),
-                )
-                .take(MAX_BATCH_SIZE)
+        val unprocessedEvents = inboxEventRepository
+            .findByProcessingStatusInOrderByCreatedAtAsc(
+                listOf(ProcessingStatus.DEFERRED, ProcessingStatus.FAILED),
+            )
+            .take(MAX_BATCH_SIZE)
 
-            if (unprocessedEvents.isEmpty()) {
-                return
-            }
+        if (unprocessedEvents.isEmpty()) {
+            return
+        }
 
-            logger.info { "Processing ${unprocessedEvents.size} unprocessed inbox events" }
+        logger.info { "Processing ${unprocessedEvents.size} unprocessed inbox events" }
 
-            for (event in unprocessedEvents) {
-                processEvent(event)
-            }
-
-        } catch (exception: Exception) {
-            logger.error(exception) { "Error during inbox event processing" }
+        for (event in unprocessedEvents) {
+            processEvent(event)
         }
     }
 
@@ -73,16 +68,11 @@ class InboxEventProcessor(
     @Scheduled(fixedDelay = 3600000)
     @Transactional
     fun cleanupProcessedEvents() {
-        try {
-            val cutoffTime = Instant.now().minus(7, ChronoUnit.DAYS)
-            val deletedCount = inboxEventRepository.deleteProcessedEventsBefore(cutoffTime)
+        val cutoffTime = Instant.now().minus(7, ChronoUnit.DAYS)
+        val deletedCount = inboxEventRepository.deleteProcessedEventsBefore(cutoffTime)
 
-            if (deletedCount > 0) {
-                logger.info { "Cleaned up $deletedCount old processed inbox events" }
-            }
-
-        } catch (exception: Exception) {
-            logger.error(exception) { "Error during cleanup of processed events" }
+        if (deletedCount > 0) {
+            logger.info { "Cleaned up $deletedCount old processed inbox events" }
         }
     }
 
@@ -96,43 +86,33 @@ class InboxEventProcessor(
         }
 
     private fun processEvent(inboxEvent: InboxEvent) {
-        try {
-            if (inboxEvent.eventPayload.isNullOrBlank()) {
-                logger.error { "Event payload is missing for event: ${inboxEvent.eventType} with ID: ${inboxEvent.eventId}" }
-                markEventAsFailed(inboxEvent, "Event payload is missing")
-                return
-            }
-
-            val eventClass = getEventClass(inboxEvent.eventType)
-            val domainEvent = objectMapper.readValue(inboxEvent.eventPayload, eventClass) as OrderEvent
-
-            processOrderEvent(domainEvent)
-
-            val processedEvent = inboxEvent.copy(
-                processingStatus = ProcessingStatus.PROCESSED,
-                processedAt = Instant.now(),
-                errorMessage = null,
-            )
-            inboxEventRepository.save(processedEvent)
-
-            logger.info { "Successfully processed inbox event: ${inboxEvent.eventType} with ID: ${inboxEvent.eventId}" }
-
-        } catch (exception: Exception) {
-            logger.error(exception) { "Failed to process inbox event: ${inboxEvent.eventType} with ID: ${inboxEvent.eventId}" }
-            markEventAsFailed(inboxEvent, exception.message ?: "Unknown error")
+        if (inboxEvent.eventPayload.isNullOrBlank()) {
+            logger.error { "Event payload is missing for event: ${inboxEvent.eventType} with ID: ${inboxEvent.eventId}" }
+            markEventAsFailed(inboxEvent, "Event payload is missing")
+            return
         }
+
+        val eventClass = getEventClass(inboxEvent.eventType)
+        val domainEvent = objectMapper.readValue(inboxEvent.eventPayload, eventClass) as OrderEvent
+
+        processOrderEvent(domainEvent)
+
+        val processedEvent = inboxEvent.copy(
+            processingStatus = ProcessingStatus.PROCESSED,
+            processedAt = Instant.now(),
+            errorMessage = null,
+        )
+        inboxEventRepository.save(processedEvent)
+
+        logger.info { "Successfully processed inbox event: ${inboxEvent.eventType} with ID: ${inboxEvent.eventId}" }
     }
 
     private fun markEventAsFailed(inboxEvent: InboxEvent, errorMessage: String) {
-        try {
-            val failedEvent = inboxEvent.copy(
-                processingStatus = ProcessingStatus.FAILED,
-                errorMessage = errorMessage.take(500), // Limit error message length
-            )
-            inboxEventRepository.save(failedEvent)
-        } catch (exception: Exception) {
-            logger.error(exception) { "Failed to mark event as failed: ${inboxEvent.eventId}" }
-        }
+        val failedEvent = inboxEvent.copy(
+            processingStatus = ProcessingStatus.FAILED,
+            errorMessage = errorMessage.take(500), // Limit error message length
+        )
+        inboxEventRepository.save(failedEvent)
     }
 
     private fun processOrderEvent(event: OrderEvent) {

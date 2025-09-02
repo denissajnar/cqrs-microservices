@@ -85,23 +85,11 @@ class EventHandler(
         queues = [$$"${app.messaging.queue:orders.query.queue}"],
     )
     fun handleOrderEvent(message: Message) {
-        try {
-            val messageBody = String(message.body, StandardCharsets.UTF_8)
-            logger.debug { "Received OrderEvent message: $messageBody" }
+        val messageBody = String(message.body, StandardCharsets.UTF_8)
+        logger.debug { "Received OrderEvent message: $messageBody" }
 
-            val event: OrderEvent = objectMapper.readValue(messageBody)
+        val event: OrderEvent = objectMapper.readValue(messageBody)
 
-            val eventTypeName = when (event.operationType) {
-                dev.denissajnar.shared.events.OrderOperationType.CREATE -> "OrderCreatedEvent"
-                dev.denissajnar.shared.events.OrderOperationType.UPDATE -> "OrderUpdatedEvent"
-                dev.denissajnar.shared.events.OrderOperationType.DELETE -> "OrderDeletedEvent"
-            }
-
-            storeEventInInbox(event, eventTypeName, messageBody)
-            
-        } catch (exception: Exception) {
-            logger.error(exception) { "Failed to deserialize OrderEvent message" }
-            throw exception
-        }
+        storeEventInInbox(event, event::class.simpleName ?: "UnknownEvent", messageBody)
     }
 }
