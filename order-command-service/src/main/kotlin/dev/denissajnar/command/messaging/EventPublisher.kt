@@ -41,27 +41,22 @@ class EventPublisher(
      */
     @Transactional
     fun publish(event: DomainEvent) {
-        try {
-            if (outboxEventRepository.existsByEventId(event.eventId)) {
-                logger.debug { "Event already exists in outbox: ${event::class.simpleName} with ID: ${event.eventId}" }
-                return
-            }
-
-            val eventPayload = objectMapper.writeValueAsString(event)
-            val outboxEvent = OutboxEvent(
-                eventId = event.eventId,
-                eventType = event::class.simpleName ?: "UnknownEvent",
-                eventPayload = eventPayload,
-                routingKey = routingKey,
-                exchange = exchange,
-            )
-
-            outboxEventRepository.save(outboxEvent)
-
-            logger.info { "Event stored in outbox: ${event::class.simpleName} with ID: ${event.eventId}" }
-        } catch (exception: Exception) {
-            logger.error(exception) { "Failed to store event in outbox: ${event::class.simpleName} with ID: ${event.eventId}" }
-            throw exception
+        if (outboxEventRepository.existsByEventId(event.eventId)) {
+            logger.debug { "Event already exists in outbox: ${event::class.simpleName} with ID: ${event.eventId}" }
+            return
         }
+
+        val eventPayload = objectMapper.writeValueAsString(event)
+        val outboxEvent = OutboxEvent(
+            eventId = event.eventId,
+            eventType = event::class.simpleName ?: "UnknownEvent",
+            eventPayload = eventPayload,
+            routingKey = routingKey,
+            exchange = exchange,
+        )
+
+        outboxEventRepository.save(outboxEvent)
+
+        logger.info { "Event stored in outbox: ${event::class.simpleName} with ID: ${event.eventId}" }
     }
 }

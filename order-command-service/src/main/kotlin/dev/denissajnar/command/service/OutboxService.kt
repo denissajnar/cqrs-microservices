@@ -17,9 +17,7 @@ class OutboxService(
     /**
      * Gets all unprocessed events in the outbox
      */
-    fun getUnprocessedEvents(): List<OutboxEvent> {
-        return outboxEventRepository.findByProcessedFalseOrderByCreatedAtAsc()
-    }
+    fun getUnprocessedEvents(): List<OutboxEvent> = outboxEventRepository.findByProcessedFalseOrderByCreatedAtAsc()
 
     /**
      * Gets outbox statistics for monitoring
@@ -42,7 +40,5 @@ class OutboxService(
     /**
      * Gets all events in the outbox with sorting
      */
-    fun getAllEvents(): List<OutboxEvent> {
-        return outboxEventRepository.findAll().sortedBy { it.createdAt }
-    }
+    fun getAllEvents(): List<OutboxEvent> = outboxEventRepository.findAll().sortedBy { it.createdAt }
 }

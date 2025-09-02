@@ -63,37 +63,34 @@ data class OrderAggregate(
      * Applies an event to the current aggregate state
      * Returns a new aggregate with updated state
      */
-    fun applyEvent(event: OrderCommand): OrderAggregate {
-        return when (event.commandType) {
+    fun applyEvent(event: OrderCommand): OrderAggregate =
+        when (event.commandType) {
             CommandType.CREATE -> throw IllegalArgumentException("Cannot apply CREATE event to existing aggregate")
             CommandType.UPDATE -> applyUpdateEvent(event)
             CommandType.DELETE -> applyDeleteEvent(event)
         }
-    }
 
     /**
      * Applies an UPDATE event to the aggregate
      */
-    private fun applyUpdateEvent(event: OrderCommand): OrderAggregate {
-        return this.copy(
+    private fun applyUpdateEvent(event: OrderCommand): OrderAggregate =
+        this.copy(
             customerId = event.customerId,
             totalAmount = event.totalAmount,
             status = event.status,
             version = event.version,
             lastModifiedAt = event.createdAt,
         )
-    }
 
     /**
      * Applies a DELETE event to the aggregate
      */
-    private fun applyDeleteEvent(event: OrderCommand): OrderAggregate {
-        return this.copy(
+    private fun applyDeleteEvent(event: OrderCommand): OrderAggregate =
+        this.copy(
             status = Status.CANCELLED,
             version = event.version,
             lastModifiedAt = event.createdAt,
         )
-    }
 
     /**
      * Checks if the aggregate is deleted/cancelled

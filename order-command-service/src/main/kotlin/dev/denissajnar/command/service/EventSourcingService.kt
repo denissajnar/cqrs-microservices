@@ -26,48 +26,37 @@ class EventSourcingService(
      * Returns null if no events found for the aggregate
      */
     fun reconstructAggregate(aggregateId: ObjectId): OrderAggregate? {
-        return try {
-            val events = orderCommandRepository.findEventsByAggregateIdOrderByCreatedAtAsc(aggregateId)
+        val events = orderCommandRepository.findEventsByAggregateIdOrderByCreatedAtAsc(aggregateId)
 
-            if (events.isEmpty()) {
-                logger.debug { "No events found for aggregate ID: $aggregateId" }
-                return null
-            }
-
-            logger.debug { "Reconstructing aggregate from ${events.size} events for ID: $aggregateId" }
-            val aggregate = OrderAggregate.fromEvents(events)
-
-            logger.info { "Successfully reconstructed aggregate ID: $aggregateId, version: ${aggregate?.getCurrentVersion()}" }
-            aggregate
-
-        } catch (exception: Exception) {
-            logger.error(exception) { "Failed to reconstruct aggregate ID: $aggregateId" }
-            throw exception
+        if (events.isEmpty()) {
+            logger.debug { "No events found for aggregate ID: $aggregateId" }
+            return null
         }
+
+        logger.debug { "Reconstructing aggregate from ${events.size} events for ID: $aggregateId" }
+        val aggregate = OrderAggregate.fromEvents(events)
+
+        logger.info { "Successfully reconstructed aggregate ID: $aggregateId, version: ${aggregate?.getCurrentVersion()}" }
+
+        return aggregate
     }
+
 
     /**
      * Gets the current state of an aggregate by reconstructing from events
      * Throws exception if aggregate doesn't exist
      */
-    fun getCurrentAggregateState(aggregateId: ObjectId): OrderAggregate {
-        return reconstructAggregate(aggregateId)
+    fun getCurrentAggregateState(aggregateId: ObjectId): OrderAggregate =
+        reconstructAggregate(aggregateId)
             ?: throw IllegalArgumentException("Aggregate not found: $aggregateId")
-    }
 
     /**
      * Gets the latest version number for an aggregate
      * Used for optimistic locking
      */
-    fun getLatestVersion(aggregateId: ObjectId): Long? {
-        return try {
-            val latestEvent = orderCommandRepository.findLatestEventByAggregateId(aggregateId)
-            latestEvent?.version
-        } catch (exception: Exception) {
-            logger.error(exception) { "Failed to get latest version for aggregate ID: $aggregateId" }
-            null
-        }
-    }
+    fun getLatestVersion(aggregateId: ObjectId): Long? =
+        orderCommandRepository.findLatestEventByAggregateId(aggregateId)?.version
+
 
     /**
      * Replays all events for an aggregate and returns the final state
@@ -79,6 +68,7 @@ class EventSourcingService(
         val events = orderCommandRepository.findEventsByAggregateIdOrderByCreatedAtAsc(aggregateId)
         if (events.isEmpty()) {
             logger.info { "No events to replay for aggregate ID: $aggregateId" }
+
             return null
         }
 
@@ -107,6 +97,7 @@ class EventSourcingService(
      */
     fun validateAggregateExists(aggregateId: ObjectId): Boolean {
         val aggregate = reconstructAggregate(aggregateId)
+
         return aggregate != null && !aggregate.isDeleted()
     }
 
@@ -115,9 +106,11 @@ class EventSourcingService(
      */
     fun getAggregateStats(aggregateId: ObjectId): AggregateStats? {
         val events = getEventHistory(aggregateId)
+
         if (events.isEmpty()) return null
 
         val aggregate = OrderAggregate.fromEvents(events)
+
         return aggregate?.let { agg ->
             AggregateStats(
                 aggregateId = aggregateId.toHexString(),

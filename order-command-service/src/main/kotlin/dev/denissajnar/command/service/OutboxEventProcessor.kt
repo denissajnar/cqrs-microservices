@@ -3,7 +3,6 @@ package dev.denissajnar.command.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import dev.denissajnar.command.domain.OutboxEvent
 import dev.denissajnar.command.repository.OutboxEventRepository
-import dev.denissajnar.shared.events.DomainEvent
 import dev.denissajnar.shared.events.OrderEvent
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.amqp.rabbit.core.RabbitTemplate
@@ -36,22 +35,17 @@ class OutboxEventProcessor(
     @Scheduled(fixedDelay = 30000)
     @Transactional
     fun processOutboxEvents() {
-        try {
-            val unprocessedEvents = outboxEventRepository.findByProcessedFalseOrderByCreatedAtAsc()
-                .take(MAX_BATCH_SIZE)
+        val unprocessedEvents = outboxEventRepository.findByProcessedFalseOrderByCreatedAtAsc()
+            .take(MAX_BATCH_SIZE)
 
-            if (unprocessedEvents.isEmpty()) {
-                return
-            }
+        if (unprocessedEvents.isEmpty()) {
+            return
+        }
 
-            logger.info { "Processing ${unprocessedEvents.size} unprocessed outbox events" }
+        logger.info { "Processing ${unprocessedEvents.size} unprocessed outbox events" }
 
-            for (event in unprocessedEvents) {
-                processEvent(event)
-            }
-
-        } catch (exception: Exception) {
-            logger.error(exception) { "Error during outbox event processing" }
+        for (event in unprocessedEvents) {
+            processEvent(event)
         }
     }
 
@@ -63,50 +57,37 @@ class OutboxEventProcessor(
     @Scheduled(fixedDelay = 3600000)
     @Transactional
     fun cleanupProcessedEvents() {
-        try {
-            val cutoffTime = Instant.now().minus(7, ChronoUnit.DAYS)
-            val deletedCount = outboxEventRepository.deleteProcessedEventsBefore(cutoffTime)
+        val cutoffTime = Instant.now().minus(7, ChronoUnit.DAYS)
+        val deletedCount = outboxEventRepository.deleteProcessedEventsBefore(cutoffTime)
 
-            if (deletedCount > 0) {
-                logger.info { "Cleaned up $deletedCount old processed outbox events" }
-            }
-
-        } catch (exception: Exception) {
-            logger.error(exception) { "Error during cleanup of processed events" }
+        if (deletedCount > 0) {
+            logger.info { "Cleaned up $deletedCount old processed outbox events" }
         }
     }
 
+
     /**
-     * Maps event type string to the unified OrderEvent class
+     * Processes and publishes an outbox event to the appropriate message broker.
+     * Marks the event as processed and persists the updated state in the repository.
+     *
+     * @param outboxEvent The outbox event to be processed and published. Includes metadata such as
+     *                    exchange, routing key, event payload, and more.
      */
-    private fun getEventClass(eventType: String): Class<out DomainEvent> =
-        when (eventType) {
-            "OrderEvent" -> OrderEvent::class.java
-            else -> throw IllegalArgumentException("Unknown event type: $eventType")
-        }
-
-
     private fun processEvent(outboxEvent: OutboxEvent) {
-        try {
-            val eventClass = getEventClass(outboxEvent.eventType)
-            val domainEvent = objectMapper.readValue(outboxEvent.eventPayload, eventClass)
+        val domainEvent = objectMapper.readValue(outboxEvent.eventPayload, OrderEvent::class.java)
 
-            rabbitTemplate.convertAndSend(
-                outboxEvent.exchange,
-                outboxEvent.routingKey,
-                domainEvent,
-            )
+        rabbitTemplate.convertAndSend(
+            outboxEvent.exchange,
+            outboxEvent.routingKey,
+            domainEvent,
+        )
 
-            val processedEvent = outboxEvent.copy(
-                processed = true,
-                processedAt = Instant.now(),
-            )
-            outboxEventRepository.save(processedEvent)
+        val processedEvent = outboxEvent.copy(
+            processed = true,
+            processedAt = Instant.now(),
+        )
+        outboxEventRepository.save(processedEvent)
 
-            logger.info { "Successfully published outbox event: ${outboxEvent.eventType} with ID: ${outboxEvent.eventId}" }
-
-        } catch (exception: Exception) {
-            logger.error(exception) { "Failed to publish outbox event: ${outboxEvent.eventType} with ID: ${outboxEvent.eventId}" }
-        }
+        logger.info { "Successfully published outbox event: ${outboxEvent.eventType} with ID: ${outboxEvent.eventId}" }
     }
 }
