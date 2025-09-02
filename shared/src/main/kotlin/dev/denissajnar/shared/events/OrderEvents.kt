@@ -9,43 +9,59 @@ import java.util.*
  * Base interface for all domain events in the CQRS system
  */
 interface DomainEvent {
-    val eventId: Long
+    val eventId: String
     val timestamp: Instant
+    val messageId: String
 }
 
 /**
- * Event published when a new order is created in the command side
- * This event triggers the creation of the read model in the query side
+ * Enum representing the type of operation performed on an order
  */
-data class OrderCreatedEvent(
-    override val eventId: Long = Random().nextLong(),
-    val historyId: String,
-    val customerId: Long,
-    val totalAmount: BigDecimal,
-    val status: Status = Status.PENDING,
-    override val timestamp: Instant = Instant.now(),
-) : DomainEvent
+enum class OrderOperationType {
+    CREATE,
+    UPDATE,
+    DELETE
+}
 
 /**
- * Event published when an order is updated in the command side
- * This event triggers the update of the read model in the query side
+ * Unified event for all order operations (create, update, delete)
+ * This event triggers the corresponding operation in the read model on the query side
+ *
+ * Field requirements by operation type:
+ * - CREATE: orderId, customerId, totalAmount, status are required
+ * - UPDATE: orderId is required, other fields are optional (only non-null values will be updated)
+ * - DELETE: orderId, customerId, totalAmount, status are required (for audit purposes)
  */
-data class OrderUpdatedEvent(
-    override val eventId: Long = Random().nextLong(),
-    val historyId: String,
-    val customerId: Long,
-    val totalAmount: BigDecimal,
-    val status: Status,
-    override val timestamp: Instant = Instant.now(),
-) : DomainEvent
-
-/**
- * Event published when an order is deleted in the command side
- * This event triggers the deletion of the read model in the query side
- */
-data class OrderDeletedEvent(
-    override val eventId: Long = Random().nextLong(),
-    val historyId: String,
+data class OrderEvent(
+    override val eventId: String = UUID.randomUUID().toString(),
+    override val messageId: String,
+    val operationType: OrderOperationType,
     val orderId: String,
+    val customerId: Long? = null,
+    val totalAmount: BigDecimal? = null,
+    val status: Status? = null,
     override val timestamp: Instant = Instant.now(),
-) : DomainEvent
+) : DomainEvent {
+
+    init {
+        when (operationType) {
+            OrderOperationType.CREATE -> {
+                require(customerId != null) { "customerId is required for CREATE operation" }
+                require(totalAmount != null) { "totalAmount is required for CREATE operation" }
+                require(status != null) { "status is required for CREATE operation" }
+            }
+
+            OrderOperationType.UPDATE -> {
+                require(customerId != null || totalAmount != null || status != null) {
+                    "At least one field (customerId, totalAmount, or status) must be provided for UPDATE operation"
+                }
+            }
+
+            OrderOperationType.DELETE -> {
+                require(customerId != null) { "customerId is required for DELETE operation" }
+                require(totalAmount != null) { "totalAmount is required for DELETE operation" }
+                require(status != null) { "status is required for DELETE operation" }
+            }
+        }
+    }
+}

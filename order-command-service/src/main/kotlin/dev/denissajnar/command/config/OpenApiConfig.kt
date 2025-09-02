@@ -26,6 +26,13 @@ class OpenApiConfig {
      * @return configured OpenAPI instance
      */
     @Bean
-    fun customOpenAPI(): OpenAPI = OpenAPI()
-        .servers(listOf(Server().url("http://localhost:8080").description("Development server")))
+    fun customOpenAPI(): OpenAPI =
+        OpenAPI()
+            .servers(
+                listOf(
+                    Server()
+                        .url("http://localhost:8080")
+                        .description("Development server"),
+                ),
+            )
 }

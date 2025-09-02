@@ -47,7 +47,7 @@ Before contributing, ensure you have:
 
 2. **Start infrastructure services**
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 3. **Build the project**

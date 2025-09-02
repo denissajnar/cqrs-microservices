@@ -20,6 +20,14 @@ interface OrderQueryRepository : CrudRepository<OrderQuery, Long> {
     fun findByCustomerIdOrderByCreatedAtDesc(customerId: Long): List<OrderQuery>
 
     /**
+     * Find orders by customer ID and status ordered by creation date
+     * @param customerId the customer identifier
+     * @param status the order status
+     * @return list of orders for the given customer and status ordered by created date descending
+     */
+    fun findByCustomerIdAndStatusOrderByCreatedAtDesc(customerId: Long, status: Status): List<OrderQuery>
+
+    /**
      * Find orders by status
      * @param status the order status
      * @return list of orders with the given status

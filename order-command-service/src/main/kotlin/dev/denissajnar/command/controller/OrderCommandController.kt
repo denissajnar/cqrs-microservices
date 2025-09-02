@@ -11,12 +11,14 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 
 /**
  * REST controller for order command operations
  * Handles write operations in the CQRS architecture
  */
+@Validated
 @RestController
 @RequestMapping("/api/v1/orders")
 @Tag(name = "Order Commands", description = "Operations for creating and managing orders")
@@ -53,7 +55,7 @@ class OrderCommandController(
      * @param dto the order update request
      * @return the updated order response
      */
-    @PutMapping("/update/{id}")
+    @PutMapping("/{id}")
     @Operation(
         summary = "Update order",
         description = "Updates an existing order and publishes an event for CQRS synchronization",

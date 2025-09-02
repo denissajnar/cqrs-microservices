@@ -80,7 +80,6 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should update order successfully with valid data`() {
-        // First create an order
         val createOrderDto = CreateOrderCommandDTO(
             customerId = 1L,
             totalAmount = BigDecimal("99.99"),
@@ -98,7 +97,6 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
         val orderId = createResponse.path<String>("id")
 
-        // Then update the order
         val updateOrderDto = UpdateOrderCommandDTO(
             customerId = 2L,
             totalAmount = BigDecimal("149.99"),
@@ -109,13 +107,13 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
             .contentType(ContentType.JSON)
             .body(updateOrderDto)
             .whenever()
-            .put("/update/{id}", orderId)
+            .put("/{id}", orderId)
             .then()
             .log().ifValidationFails()
             .statusCode(200)
             .contentType(ContentType.JSON)
             .body("id", notNullValue())
-            .body("id", not(equalTo(orderId))) // Update creates new command record (event sourcing)
+            .body("id", not(equalTo(orderId)))
             .body("customerId", equalTo(2))
             .body("totalAmount", equalTo(149.99f))
             .body("status", equalTo("CONFIRMED"))
@@ -124,7 +122,6 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should return 400 when updating order with invalid customer id`() {
-        // First create an order
         val createOrderDto = CreateOrderCommandDTO(
             customerId = 1L,
             totalAmount = BigDecimal("99.99"),
@@ -142,7 +139,6 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
         val orderId = createResponse.path<String>("id")
 
-        // Then try to update with invalid data
         val updateOrderDto = UpdateOrderCommandDTO(
             customerId = -1L,
             totalAmount = BigDecimal("149.99"),
@@ -153,7 +149,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
             .contentType(ContentType.JSON)
             .body(updateOrderDto)
             .whenever()
-            .put("/update/{id}", orderId)
+            .put("/{id}", orderId)
             .then()
             .log().ifValidationFails()
             .statusCode(400)
@@ -173,7 +169,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
             .contentType(ContentType.JSON)
             .body(updateOrderDto)
             .whenever()
-            .put("/update/{id}", "507f1f77bcf86cd799439011")
+            .put("/{id}", "507f1f77bcf86cd799439011")
             .then()
             .log().ifValidationFails()
             .statusCode(404)
@@ -181,7 +177,6 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should delete order successfully`() {
-        // First create an order
         val createOrderDto = CreateOrderCommandDTO(
             customerId = 1L,
             totalAmount = BigDecimal("99.99"),
@@ -199,7 +194,6 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
         val orderId = createResponse.path<String>("id")
 
-        // Then delete the order
         RestAssured.given()
             .whenever()
             .delete("/{id}", orderId)
@@ -230,7 +224,6 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
             totalAmount = BigDecimal("149.99"),
         )
 
-        // Create two orders concurrently
         val response1 = RestAssured.given()
             .contentType(ContentType.JSON)
             .body(createOrderDto1)
@@ -251,7 +244,6 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
             .extract()
             .response()
 
-        // Verify both orders were created with different IDs
         val orderId1 = response1.path<String>("id")
         val orderId2 = response2.path<String>("id")
 

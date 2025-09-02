@@ -24,7 +24,6 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
             totalAmount = BigDecimal("99.99"),
         )
 
-        // Create order and extract response details
         val response = RestAssured.given()
             .contentType(ContentType.JSON)
             .body(createOrderDto)
@@ -48,7 +47,6 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should demonstrate order update workflow with validation`() {
-        // Step 1: Create initial order
         val createOrderDto = CreateOrderCommandDTO(
             customerId = 2L,
             totalAmount = BigDecimal("149.99"),
@@ -66,34 +64,36 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
 
         val orderId = createResponse.path<String>("id")
 
-        // Step 2: Update order with new values
         val updateOrderDto = UpdateOrderCommandDTO(
             customerId = 3L,
             totalAmount = BigDecimal("199.99"),
             status = Status.CONFIRMED,
         )
 
-        RestAssured.given()
+        val updateResponse = RestAssured.given()
             .contentType(ContentType.JSON)
             .body(updateOrderDto)
             .whenever()
-            .put("/update/{id}", orderId)
+            .put("/{id}", orderId)
             .then()
             .log().ifValidationFails()
             .statusCode(200)
             .body("id", notNullValue())
-            .body("id", not(equalTo(orderId))) // Update creates new command record (event sourcing)
+            .body("id", not(equalTo(orderId)))
             .body("customerId", equalTo(3))
             .body("totalAmount", equalTo(199.99f))
             .body("status", equalTo("CONFIRMED"))
             .body("createdAt", notNullValue())
+            .extract()
+            .response()
 
-        println("[DEBUG_LOG] Updated order $orderId successfully")
+        val updateCommandId = updateResponse.path<String>("id")
+
+        println("[DEBUG_LOG] Updated order $orderId with new command ID: $updateCommandId")
     }
 
     @Test
     fun `should demonstrate order deletion workflow`() {
-        // Create order first
         val createOrderDto = CreateOrderCommandDTO(
             customerId = 4L,
             totalAmount = BigDecimal("79.99"),
@@ -111,7 +111,6 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
 
         val orderId = createResponse.path<String>("id")
 
-        // Delete the order
         RestAssured.given()
             .whenever()
             .delete("/{id}", orderId)
@@ -127,7 +126,6 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
         val customers = (10L..15L).toList()
         val orderIds = mutableListOf<String>()
 
-        // Create multiple orders
         customers.forEach { customerId ->
             val createOrderDto = CreateOrderCommandDTO(
                 customerId = customerId,
@@ -151,7 +149,6 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
 
         println("[DEBUG_LOG] Created ${orderIds.size} orders: $orderIds")
 
-        // Update some orders
         orderIds.take(2).forEach { orderId ->
             val updateOrderDto = UpdateOrderCommandDTO(
                 customerId = 999L,
@@ -163,7 +160,7 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
                 .contentType(ContentType.JSON)
                 .body(updateOrderDto)
                 .whenever()
-                .put("/update/{id}", orderId)
+                .put("/{id}", orderId)
                 .then()
                 .statusCode(200)
                 .body("totalAmount", equalTo(999.99f))
@@ -175,7 +172,6 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should demonstrate error handling scenarios`() {
-        // Test invalid customer ID
         val invalidCreateOrderDto = CreateOrderCommandDTO(
             customerId = -1L,
             totalAmount = BigDecimal("99.99"),
@@ -190,7 +186,6 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
             .statusCode(400)
             .body("details[0]", containsString("Customer ID must be positive"))
 
-        // Test invalid amount
         val invalidAmountOrderDto = CreateOrderCommandDTO(
             customerId = 1L,
             totalAmount = BigDecimal("-10.00"),
@@ -205,7 +200,6 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
             .statusCode(400)
             .body("details[0]", containsString("Total amount must be positive"))
 
-        // Test update non-existent order
         val updateOrderDto = UpdateOrderCommandDTO(
             customerId = 1L,
             totalAmount = BigDecimal("149.99"),
@@ -216,7 +210,7 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
             .contentType(ContentType.JSON)
             .body(updateOrderDto)
             .whenever()
-            .put("/update/{id}", "507f1f77bcf86cd799439011")
+            .put("/{id}", "507f1f77bcf86cd799439011")
             .then()
             .statusCode(404)
 
@@ -225,7 +219,6 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should demonstrate RestAssured advanced features`() {
-        // Create order with detailed response validation
         val createOrderDto = CreateOrderCommandDTO(
             customerId = 100L,
             totalAmount = BigDecimal("299.99"),
@@ -240,16 +233,15 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
             .statusCode(201)
             .contentType(ContentType.JSON)
             .header("Content-Type", containsString("application/json"))
-            .body("id", matchesPattern("[a-f0-9]{24}"))  // MongoDB ObjectId pattern
+            .body("id", matchesPattern("[a-f0-9]{24}"))
             .body("customerId", both(greaterThan(0)).and(lessThanOrEqualTo(1000)))
             .body("totalAmount", equalTo(299.99f))
             .body("status", isOneOf("PENDING", "CONFIRMED", "PROCESSING"))
             .body("createdAt", matchesPattern("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*"))
-            .time(lessThan(5000L))  // Response time validation
+            .time(lessThan(5000L))
             .extract()
             .response()
 
-        // Extract and validate specific values
         val orderId = response.path<String>("id")
         val createdAt = response.path<String>("createdAt")
         val totalAmount = response.path<Float>("totalAmount")
@@ -289,7 +281,6 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
 
         println("[DEBUG_LOG] Created $numberOfConcurrentOrders concurrent orders")
 
-        // Verify all orders have unique IDs
         assert(orderIds.toSet().size == numberOfConcurrentOrders) {
             "All order IDs should be unique"
         }

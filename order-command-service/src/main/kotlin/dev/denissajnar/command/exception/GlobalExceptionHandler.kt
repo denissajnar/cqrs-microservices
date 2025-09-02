@@ -70,7 +70,7 @@ class GlobalExceptionHandler {
         val response = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
             error = "BUSINESS_ERROR",
-            message = sanitizeInput(ex.message) ?: "Business logic validation failed",
+            message = sanitizeInput(ex.message),
             path = sanitizeInput(request.requestURI),
         )
 
@@ -87,9 +87,8 @@ class GlobalExceptionHandler {
     ): ResponseEntity<ErrorResponse> {
         logger.warn { "Business validation error: ${ex.message}" }
 
-        val sanitizedMessage = sanitizeInput(ex.message) ?: "Business rule validation failed"
+        val sanitizedMessage = sanitizeInput(ex.message)
 
-        // Check if this is a "not found" error and return 404, otherwise return 400
         val isNotFoundError = sanitizedMessage.lowercase().contains("not found")
         val status = if (isNotFoundError) HttpStatus.NOT_FOUND else HttpStatus.BAD_REQUEST
 
