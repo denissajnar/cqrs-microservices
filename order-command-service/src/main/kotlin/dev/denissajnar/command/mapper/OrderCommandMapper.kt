@@ -67,7 +67,7 @@ fun OrderCommand.toOrderEvent(): OrderEvent {
         orderId = when (this.commandType) {
             CommandType.CREATE -> this.id.toHexString()
             CommandType.UPDATE -> this.originalOrderId?.toHexString() ?: this.id.toHexString()
-            CommandType.DELETE -> this.id.toHexString()
+            CommandType.DELETE -> this.originalOrderId?.toHexString() ?: this.id.toHexString()
         },
         customerId = this.customerId,
         totalAmount = this.totalAmount,
