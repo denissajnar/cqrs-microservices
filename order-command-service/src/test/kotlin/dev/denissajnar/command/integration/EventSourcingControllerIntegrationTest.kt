@@ -308,6 +308,64 @@ class EventSourcingControllerIntegrationTest : SpringBootTestParent() {
     }
 
     @Test
+    fun `should get current aggregate state for existing order`() {
+        val createOrderDto = CreateOrderCommandDTO(
+            customerId = 8L,
+            totalAmount = BigDecimal("199.99"),
+        )
+
+        val createResponse = RestAssured.given()
+            .contentType(ContentType.JSON)
+            .body(createOrderDto)
+            .whenever()
+            .post("http://localhost:$port/api/v1/orders")
+            .then()
+            .statusCode(201)
+            .extract()
+            .response()
+
+        val orderId = createResponse.path<String>("id")
+
+        RestAssured.given()
+            .whenever()
+            .get("/aggregates/$orderId/current-state")
+            .then()
+            .log().ifValidationFails()
+            .statusCode(200)
+            .contentType(ContentType.JSON)
+            .body("id.timestamp", notNullValue())
+            .body("customerId", equalTo(8))
+            .body("totalAmount", equalTo(199.99f))
+            .body("status", equalTo("PENDING"))
+            .body("version", equalTo(1))
+    }
+
+    @Test
+    fun `should return 400 when getting current state for non-existent aggregate`() {
+        val validButNonExistentId = "507f1f77bcf86cd799439011"
+
+        RestAssured.given()
+            .whenever()
+            .get("/aggregates/$validButNonExistentId/current-state")
+            .then()
+            .log().ifValidationFails()
+            .statusCode(400)
+            .contentType(ContentType.JSON)
+            .body("error", equalTo("BUSINESS_ERROR"))
+            .body("message", equalTo("Aggregate not found: $validButNonExistentId"))
+    }
+
+    @Test
+    fun `should return 400 when getting current state with invalid aggregate ID`() {
+        RestAssured.given()
+            .whenever()
+            .get("/aggregates/invalid-id/current-state")
+            .then()
+            .log().ifValidationFails()
+            .statusCode(400)
+    }
+
+    @Test
     fun `should handle multiple operations on same aggregate`() {
         val createOrderDto = CreateOrderCommandDTO(
             customerId = 7L,

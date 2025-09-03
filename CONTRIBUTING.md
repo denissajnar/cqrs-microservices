@@ -41,7 +41,7 @@ Before contributing, ensure you have:
 
 1. **Fork and clone the repository**
    ```bash
-   git clone https://github.com/your-username/cqrs-microservices.git
+   git clone <repository-url>
    cd cqrs-microservices
    ```
 
@@ -90,7 +90,7 @@ We follow a Git Flow approach:
 
 4. **Run the full test suite**
    ```bash
-   ./gradlew test integrationTest
+   ./gradlew test
    ```
 
 5. **Update documentation if needed**
@@ -470,12 +470,12 @@ object OrderTestDataBuilder {
 
 1. **Ensure all tests pass**
    ```bash
-   ./gradlew test integrationTest
+   ./gradlew test
    ```
 
-2. **Check code formatting**
+2. **Verify code builds successfully**
    ```bash
-   ./gradlew ktlintCheck
+   ./gradlew build
    ```
 
 3. **Update documentation** if needed

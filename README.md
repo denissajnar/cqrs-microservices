@@ -33,6 +33,7 @@ communication, and different data storage optimized for each operation type.
 
 - **CQRS Pattern**: Separate command and query responsibilities
 - **Event-Driven Architecture**: Asynchronous communication between services
+- **Event Sourcing**: Complete event history tracking with aggregate reconstruction
 - **Transactional Outbox Pattern**: Reliable event publishing with transactional guarantees
 - **Transactional Inbox Pattern**: Idempotent event processing with deduplication
 - **Microservices Architecture**: Independent, scalable services
@@ -102,7 +103,7 @@ inconsistency.
 
 - Events are stored in MongoDB `outbox_events` collection within the same transaction as business data
 - A scheduled processor (`OutboxEventProcessor`) publishes unprocessed events to RabbitMQ
-- Includes retry logic with exponential backoff for failed deliveries
+- Failed events are marked with error details for monitoring and debugging
 - Automatic cleanup of old processed events
 
 **Benefits:**
@@ -169,7 +170,7 @@ CREATE TABLE IF NOT EXISTS inbox_events
 1. **At-Least-Once Delivery**: Events are guaranteed to be delivered at least once
 2. **Exactly-Once Processing**: Duplicate events are automatically deduplicated
 3. **Transactional Consistency**: Database changes and messaging are atomic
-4. **Failure Recovery**: Automatic retry with exponential backoff
+4. **Failure Tracking**: Failed events are logged and marked for manual intervention
 5. **Monitoring**: Complete audit trail of all message processing
 
 ### Processing Flow
@@ -303,6 +304,31 @@ Content-Type: application/json
 
 ```http
 DELETE /api/v1/orders/{id}
+```
+
+#### Event Sourcing Operations
+
+```http
+# Reconstruct aggregate from events
+GET /api/v1/event-sourcing/aggregates/{id}/reconstruct
+
+# Get event history for aggregate
+GET /api/v1/event-sourcing/aggregates/{id}/history
+
+# Get aggregate statistics
+GET /api/v1/event-sourcing/aggregates/{id}/stats
+
+# Replay events for aggregate
+POST /api/v1/event-sourcing/aggregates/{id}/replay
+
+# Check if aggregate exists
+GET /api/v1/event-sourcing/aggregates/{id}/exists
+
+# Get current aggregate state
+GET /api/v1/event-sourcing/aggregates/{id}/state
+
+# Get latest version
+GET /api/v1/event-sourcing/aggregates/{id}/version
 ```
 
 ### Query Service (Port 8081)
@@ -526,11 +552,10 @@ If you encounter any issues or have questions:
 ## 🚀 What's Next?
 
 - [ ] Introduce gradle composite builds
-- [ ] Implement message retry
-- [ ] Implement DLQ
+- [ ] Implement message retry with exponential backoff
+- [ ] Implement DLQ (Dead Letter Queue)
 - [ ] Add authentication and authorization
 - [ ] Implement distributed tracing
 - [ ] Add comprehensive monitoring and alerting
-- [ ] Implement event sourcing
 - [ ] Add API rate limiting
 - [ ] Container orchestration with Kubernetes
