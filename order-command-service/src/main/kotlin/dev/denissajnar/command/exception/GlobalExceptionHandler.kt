@@ -3,6 +3,7 @@ package dev.denissajnar.command.exception
 import dev.denissajnar.shared.dto.ErrorResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.validation.ConstraintViolationException
 import org.springframework.amqp.AmqpException
 import org.springframework.dao.DataAccessException
 import org.springframework.http.HttpStatus
@@ -58,6 +59,31 @@ class GlobalExceptionHandler {
     }
 
     /**
+     * Handles constraint violations from path variable validation
+     */
+    @ExceptionHandler(ConstraintViolationException::class)
+    fun handleConstraintViolationExceptions(
+        ex: ConstraintViolationException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ErrorResponse> {
+        logger.warn { "Constraint violation error: ${ex.message}" }
+
+        val violations = ex.constraintViolations.map { violation ->
+            "${violation.propertyPath}: ${sanitizeInput(violation.message)}"
+        }
+
+        val response = ErrorResponse(
+            status = HttpStatus.BAD_REQUEST.value(),
+            error = "CONSTRAINT_VIOLATION",
+            message = "Path variable validation failed",
+            details = violations,
+            path = sanitizeInput(request.requestURI),
+        )
+
+        return ResponseEntity.badRequest().body(response)
+    }
+
+    /**
      * Handles business logic validation errors
      */
     @ExceptionHandler(IllegalArgumentException::class)
@@ -70,7 +96,7 @@ class GlobalExceptionHandler {
         val response = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
             error = "BUSINESS_ERROR",
-            message = sanitizeInput(ex.message) ?: "Business logic validation failed",
+            message = sanitizeInput(ex.message),
             path = sanitizeInput(request.requestURI),
         )
 
@@ -87,9 +113,8 @@ class GlobalExceptionHandler {
     ): ResponseEntity<ErrorResponse> {
         logger.warn { "Business validation error: ${ex.message}" }
 
-        val sanitizedMessage = sanitizeInput(ex.message) ?: "Business rule validation failed"
+        val sanitizedMessage = sanitizeInput(ex.message)
 
-        // Check if this is a "not found" error and return 404, otherwise return 400
         val isNotFoundError = sanitizedMessage.lowercase().contains("not found")
         val status = if (isNotFoundError) HttpStatus.NOT_FOUND else HttpStatus.BAD_REQUEST
 

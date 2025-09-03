@@ -17,8 +17,8 @@ class OrderQuery(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null,
 
-    @Column(length = 36)
-    var historyId: String? = null,
+    @Column(name = "order_id", length = 36)
+    var orderId: String? = null,
 
     @Column(name = "customer_id", nullable = false)
     var customerId: Long = 0L,

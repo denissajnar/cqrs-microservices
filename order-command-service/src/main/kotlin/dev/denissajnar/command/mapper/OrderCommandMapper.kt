@@ -5,9 +5,8 @@ import dev.denissajnar.command.domain.OrderCommand
 import dev.denissajnar.command.dto.CreateOrderCommandDTO
 import dev.denissajnar.command.dto.OrderResponseDTO
 import dev.denissajnar.command.dto.UpdateOrderCommandDTO
-import dev.denissajnar.shared.events.OrderCreatedEvent
-import dev.denissajnar.shared.events.OrderDeletedEvent
-import dev.denissajnar.shared.events.OrderUpdatedEvent
+import dev.denissajnar.shared.events.OrderEvent
+import dev.denissajnar.shared.events.OrderOperationType
 import dev.denissajnar.shared.model.Status
 import java.time.Instant
 
@@ -52,36 +51,30 @@ fun OrderCommand.toDeleteCommand(): OrderCommand =
 
 
 /**
- * Extension function to convert OrderCommand to OrderCreatedEvent
- * Generates event ID if order ID is null
+ * Extension function to convert OrderCommand to unified OrderEvent
+ * Uses the command ID as messageId and determines operationType from commandType
  */
-fun OrderCommand.toEvent(): OrderCreatedEvent = OrderCreatedEvent(
-    historyId = this.id.toHexString(),
-    customerId = this.customerId,
-    totalAmount = this.totalAmount,
-    status = this.status,
-    timestamp = Instant.now(),
-)
+fun OrderCommand.toOrderEvent(): OrderEvent {
+    val operationType = when (this.commandType) {
+        CommandType.CREATE -> OrderOperationType.CREATE
+        CommandType.UPDATE -> OrderOperationType.UPDATE
+        CommandType.DELETE -> OrderOperationType.DELETE
+    }
 
-/**
- * Extension function to convert OrderCommand to OrderUpdatedEvent
- */
-fun OrderCommand.toUpdatedEvent(): OrderUpdatedEvent = OrderUpdatedEvent(
-    historyId = this.id.toHexString(),
-    customerId = this.customerId,
-    totalAmount = this.totalAmount,
-    status = this.status,
-    timestamp = Instant.now(),
-)
-
-/**
- * Extension function to convert OrderCommand to OrderDeletedEvent
- */
-fun OrderCommand.toDeletedEvent(originalOrderId: String): OrderDeletedEvent = OrderDeletedEvent(
-    historyId = this.id.toHexString(),
-    orderId = originalOrderId,
-    timestamp = Instant.now(),
-)
+    return OrderEvent(
+        messageId = this.id.toHexString(),
+        operationType = operationType,
+        orderId = when (this.commandType) {
+            CommandType.CREATE -> this.id.toHexString()
+            CommandType.UPDATE -> this.originalOrderId?.toHexString() ?: this.id.toHexString()
+            CommandType.DELETE -> this.originalOrderId?.toHexString() ?: this.id.toHexString()
+        },
+        customerId = this.customerId,
+        totalAmount = this.totalAmount,
+        status = this.status,
+        timestamp = Instant.now(),
+    )
+}
 
 /**
  * Extension function to convert OrderCommand to OrderResponseDTO

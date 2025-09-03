@@ -9,12 +9,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 
 /**
  * REST controller for order query operations
  * Handles read operations in the CQRS architecture
  */
+@Validated
 @RestController
 @RequestMapping("/api/v1/orders")
 @Tag(name = "OrderQuery Queries", description = "Operations for querying orders")
@@ -45,44 +47,78 @@ class OrderQueryController(
             ?: ResponseEntity.notFound().build()
 
     /**
-     * Retrieves orders by customer ID
-     * @param customerId the customer identifier
-     * @return list of orders for the customer
+     * Retrieves orders with optional filtering by customer ID and/or status
+     * @param customerId optional customer identifier to filter by
+     * @param status optional order status to filter by
+     * @return list of orders matching the filter criteria
      */
     @GetMapping
-    @Operation(summary = "Get orders by customer", description = "Retrieves all orders for a specific customer")
+    @Operation(
+        summary = "Get orders with optional filtering",
+        description = "Retrieves orders from the query side database with optional filtering by customer ID and/or status. If no filters are provided, returns all orders.",
+    )
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "Orders retrieved successfully"),
-            ApiResponse(responseCode = "400", description = "Invalid customer ID"),
+            ApiResponse(responseCode = "400", description = "Invalid filter parameters"),
             ApiResponse(responseCode = "500", description = "Internal server error"),
         ],
     )
-    fun getOrdersByCustomer(
-        @Parameter(description = "Customer ID", example = "1")
-        @RequestParam customerId: Long,
-    ): ResponseEntity<List<OrderQueryDTO>> {
-        require(customerId >= 0) { "Customer ID must be positive" }
-        return ResponseEntity.ok(orderQueryService.getOrdersByCustomer(customerId))
-    }
+    fun getOrders(
+        @Parameter(description = "Customer ID to filter by", example = "1")
+        @RequestParam(required = false) customerId: Long?,
+        @Parameter(description = "Order status to filter by", example = "PENDING")
+        @RequestParam(required = false) status: Status?,
+    ): ResponseEntity<List<OrderQueryDTO>> =
+        when {
+            customerId != null && customerId < 0 -> ResponseEntity.badRequest().build()
+            else -> {
+                val orders = when {
+                    customerId != null && status != null ->
+                        orderQueryService.getOrdersByCustomerAndStatus(customerId, status)
+
+                    customerId != null ->
+                        orderQueryService.getOrdersByCustomer(customerId)
+
+                    status != null ->
+                        orderQueryService.getOrdersByStatus(status)
+
+                    else ->
+                        orderQueryService.getAllOrders()
+                }
+                ResponseEntity.ok(orders)
+            }
+        }
 
     /**
-     * Retrieves orders by status
-     * @param status the order status
-     * @return list of orders with the given status
+     * Retrieves an order by its order ID
+     * @param orderId the order identifier from command side
+     * @return the order or 404 if not found
      */
-    @GetMapping("/by-status")
-    @Operation(summary = "Get orders by status", description = "Retrieves all orders with a specific status")
+    @GetMapping("/order/{orderId}")
+    @Operation(
+        summary = "Get order by order ID",
+        description = "Retrieves order details using the order ID from the command side. The order ID is a UUID string that uniquely identifies an order across both command and query sides.",
+    )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Orders retrieved successfully"),
-            ApiResponse(responseCode = "400", description = "Invalid status"),
+            ApiResponse(responseCode = "200", description = "Order found and retrieved successfully"),
+            ApiResponse(responseCode = "404", description = "Order not found with the given order ID"),
+            ApiResponse(responseCode = "400", description = "Invalid or blank order ID provided"),
             ApiResponse(responseCode = "500", description = "Internal server error"),
         ],
     )
-    fun getOrdersByStatus(
-        @Parameter(description = "OrderQuery status", example = "PENDING")
-        @RequestParam status: Status,
-    ): ResponseEntity<List<OrderQueryDTO>> =
-        ResponseEntity.ok(orderQueryService.getOrdersByStatus(status))
+    fun getOrderByOrderId(
+        @Parameter(
+            description = "Order ID from command side (UUID format)",
+            example = "550e8400-e29b-41d4-a716-446655440000",
+        )
+        @PathVariable orderId: String,
+    ): ResponseEntity<OrderQueryDTO> =
+        when {
+            orderId.isBlank() -> ResponseEntity.badRequest().build()
+            else -> orderQueryService.findOrderByOrderId(orderId)
+                ?.let { order -> ResponseEntity.ok(order) }
+                ?: ResponseEntity.notFound().build()
+        }
 }

@@ -18,7 +18,7 @@ data class OrderQueryDTO(
         description = "Unique identifier for the order assigned by the system",
         example = "68af074ac3c1775477995459",
     )
-    val historyId: String,
+    val orderId: String,
 
     @field:Schema(description = "ID of the customer who placed the order", example = "1")
     val customerId: Long,

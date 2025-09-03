@@ -1,100 +1,89 @@
 package dev.denissajnar.query.messaging
 
-import dev.denissajnar.query.mapper.toEntity
-import dev.denissajnar.query.repository.OrderQueryRepository
-import dev.denissajnar.shared.events.OrderCreatedEvent
-import dev.denissajnar.shared.events.OrderDeletedEvent
-import dev.denissajnar.shared.events.OrderUpdatedEvent
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import dev.denissajnar.query.entity.InboxEvent
+import dev.denissajnar.query.entity.ProcessingStatus
+import dev.denissajnar.query.repository.InboxEventRepository
+import dev.denissajnar.shared.events.DomainEvent
+import dev.denissajnar.shared.events.EventType
+import dev.denissajnar.shared.events.OrderEvent
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.amqp.core.Message
 import org.springframework.amqp.rabbit.annotation.RabbitListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.nio.charset.StandardCharsets
 
 /**
- * Event handler for processing domain events from the command side
- * Updates the query side database when events are received
+ * Event handler for storing domain events from the command side using the inbox pattern
+ * Stores events for deferred processing by InboxEventProcessor with idempotency guarantees
  */
 @Component
 @Transactional
 class EventHandler(
-    private val orderQueryRepository: OrderQueryRepository,
+    private val inboxEventRepository: InboxEventRepository,
 ) {
 
     companion object {
         private val logger = KotlinLogging.logger {}
+        private val objectMapper: ObjectMapper =
+            jacksonObjectMapper().apply {
+                registerModule(JavaTimeModule())
+            }
     }
 
     /**
-     * Handles OrderCreatedEvent by creating the corresponding read model
-     * @param event the order created event from the command side
+     * Stores an event in the inbox for deferred processing
+     * @param event the domain event to store
+     * @param eventType the type name of the event
+     * @param eventPayload the serialized event payload
      */
-    @RabbitListener(queues = [$$"${app.messaging.queue:orders.query.queue}"])
-    fun handleOrderCreatedEvent(event: OrderCreatedEvent) {
+    private fun <T> storeEventInInbox(
+        event: T,
+        eventType: String,
+        eventPayload: String,
+    ) where T : DomainEvent {
         try {
-            logger.info { "Processing OrderCreatedEvent for order: ${event.historyId}" }
-
-            // Convert event to entity using extension function and save
-            val orderEntity = event.toEntity()
-            orderQueryRepository.save(orderEntity)
-
-            logger.info { "Successfully processed OrderCreatedEvent for order: ${event.historyId}" }
-        } catch (exception: Exception) {
-            logger.error { "Failed to process OrderCreatedEvent for order: ${event.historyId}" }
-            throw exception // Re-throw to trigger retry mechanism if configured
-        }
-    }
-
-    /**
-     * Handles OrderUpdatedEvent by updating the corresponding read model
-     * @param event the order updated event from the command side
-     */
-    @RabbitListener(queues = [$$"${app.messaging.queue:orders.query.queue}"])
-    fun handleOrderUpdatedEvent(event: OrderUpdatedEvent) {
-        try {
-            logger.info { "Processing OrderUpdatedEvent for order: ${event.historyId}" }
-
-            // Find existing order by historyId and update it, or create new if not found
-            val existingOrder = orderQueryRepository.findByHistoryId(event.historyId)
-            if (existingOrder != null) {
-                // Update existing order
-                existingOrder.customerId = event.customerId
-                existingOrder.totalAmount = event.totalAmount
-                existingOrder.status = event.status
-                orderQueryRepository.save(existingOrder)
-                logger.info { "Updated existing order with historyId: ${event.historyId}" }
-            } else {
-                logger.error { "Order not found for historyId: ${event.historyId}" }
+            if (inboxEventRepository.existsByEventId(event.eventId)) {
+                logger.debug { "Event already exists in inbox, skipping: $eventType with ID: ${event.eventId}" }
+                return
             }
 
-            logger.info { "Successfully processed OrderUpdatedEvent for order: ${event.historyId}" }
+            val inboxEvent = InboxEvent(
+                eventId = event.eventId,
+                messageId = event.messageId,
+                eventType = eventType,
+                processingStatus = ProcessingStatus.DEFERRED,
+                eventPayload = eventPayload,
+            )
+            inboxEventRepository.save(inboxEvent)
+
+            logger.info { "Successfully stored in inbox for deferred processing: $eventType with ID: ${event.eventId}" }
+
         } catch (exception: Exception) {
-            logger.error { "Failed to process OrderUpdatedEvent for order: ${event.historyId}" }
-            throw exception // Re-throw to trigger retry mechanism if configured
+            logger.error(exception) { "Failed to store $eventType with ID: ${event.eventId} in inbox" }
+            throw exception
         }
     }
 
+
     /**
-     * Handles OrderDeletedEvent by removing the corresponding read model
-     * @param event the order deleted event from the command side
+     * Handles unified OrderEvent for all order operations (create, update, delete)
+     * Uses inbox pattern for idempotent processing
+     * @param message the raw RabbitMQ message
      */
-    @RabbitListener(queues = [$$"${app.messaging.queue:orders.query.queue}"])
-    fun handleOrderDeletedEvent(event: OrderDeletedEvent) {
-        try {
-            logger.info { "Processing OrderDeletedEvent for order: ${event.orderId}" }
+    @RabbitListener(
+        queues = [$$"${app.messaging.queue:orders.query.queue}"],
+    )
+    fun handleOrderEvent(message: Message) {
+        val messageBody = String(message.body, StandardCharsets.UTF_8)
+        logger.debug { "Received OrderEvent message: $messageBody" }
 
-            // Find and delete the order by historyId
-            val existingOrder = orderQueryRepository.findByHistoryId(event.orderId)
-            if (existingOrder != null) {
-                orderQueryRepository.delete(existingOrder)
-                logger.info { "Successfully deleted order with historyId: ${event.orderId}" }
-            } else {
-                logger.warn { "Order not found for deletion with historyId: ${event.orderId}" }
-            }
+        val event: OrderEvent = objectMapper.readValue(messageBody)
 
-            logger.info { "Successfully processed OrderDeletedEvent for order: ${event.orderId}" }
-        } catch (exception: Exception) {
-            logger.error { "Failed to process OrderDeletedEvent for order: ${event.orderId}" }
-            throw exception // Re-throw to trigger retry mechanism if configured
-        }
+        storeEventInInbox(event, EventType.fromEvent(event).typeName, messageBody)
     }
 }

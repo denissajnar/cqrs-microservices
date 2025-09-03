@@ -1,6 +1,7 @@
 package dev.denissajnar.query
 
 import dev.denissajnar.query.config.TestcontainersConfiguration
+import dev.denissajnar.query.repository.InboxEventRepository
 import dev.denissajnar.query.repository.OrderQueryRepository
 import io.restassured.RestAssured
 import org.junit.jupiter.api.AfterEach
@@ -23,6 +24,9 @@ abstract class SpringBootTestParent {
     @Autowired
     lateinit var orderQueryRepository: OrderQueryRepository
 
+    @Autowired
+    lateinit var inboxEventRepository: InboxEventRepository
+
     @BeforeEach
     fun setUp() {
         RestAssured.port = port
@@ -32,5 +36,6 @@ abstract class SpringBootTestParent {
     @AfterEach
     fun tearDown() {
         orderQueryRepository.deleteAll()
+        inboxEventRepository.deleteAll()
     }
 }

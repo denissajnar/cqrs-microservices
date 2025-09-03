@@ -4,7 +4,10 @@ import dev.denissajnar.command.dto.CreateOrderCommandDTO
 import dev.denissajnar.command.dto.OrderResponseDTO
 import dev.denissajnar.command.dto.UpdateOrderCommandDTO
 import dev.denissajnar.command.exception.BusinessValidationException
-import dev.denissajnar.command.mapper.*
+import dev.denissajnar.command.mapper.toCommand
+import dev.denissajnar.command.mapper.toDeleteCommand
+import dev.denissajnar.command.mapper.toOrderEvent
+import dev.denissajnar.command.mapper.toResponseDTO
 import dev.denissajnar.command.messaging.EventPublisher
 import dev.denissajnar.command.repository.OrderCommandRepository
 import dev.denissajnar.command.validation.OrderValidator
@@ -40,25 +43,24 @@ class OrderCommandService(
                 orderValidator.validateForCreation(it)
                 orderCommandRepository.save(it.toCommand())
             }.also {
-                eventPublisher.publish(it.toEvent())
+                eventPublisher.publish(it.toOrderEvent())
                 logger.info { "Order created with ID: ${it.id}" }
             }.toResponseDTO()
 
     /**
-     * Updates an order by creating a new command entry (event sourcing)
+     * Updates an existing order by creating a new command entry (event sourcing)
      * Does NOT modify existing MongoDB document - creates new historical record
      */
     fun updateOrder(id: String, dto: UpdateOrderCommandDTO): OrderResponseDTO =
-        dto
-            .let {
-                orderCommandRepository.findByIdOrNull(ObjectId(id))
-            }?.also {
+        orderCommandRepository.findByIdOrNull(ObjectId(id))
+            ?.also {
                 orderValidator.validateForUpdate(dto, it)
-            }?.let {
-                dto.toCommand(it)
-            }?.also {
-                eventPublisher.publish(it.toUpdatedEvent())
-                logger.info { "Order update command created with ID: ${it.id}" }
+            }?.let { existingOrder ->
+                val updateCommand = dto.toCommand(existingOrder)
+                orderCommandRepository.save(updateCommand)
+            }?.also { updateCommand ->
+                eventPublisher.publish(updateCommand.toOrderEvent())
+                logger.info { "Order update command created with ID: ${updateCommand.id}" }
             }?.toResponseDTO() ?: throw BusinessValidationException("Order not found: $id")
 
     /**
@@ -72,7 +74,7 @@ class OrderCommandService(
                 val deleteCommand = existingOrder.toDeleteCommand()
                 orderCommandRepository.save(deleteCommand)
             }?.also { deleteCommand ->
-                eventPublisher.publish(deleteCommand.toDeletedEvent(id))
+                eventPublisher.publish(deleteCommand.toOrderEvent())
                 logger.info { "Order deletion command created with ID: ${deleteCommand.id}" }
             } ?: throw BusinessValidationException("Order not found: $id")
 }

@@ -25,9 +25,7 @@ class GlobalExceptionHandler {
         /**
          * Sanitizes user input to prevent XSS attacks
          */
-        private fun sanitizeInput(input: String?): String {
-            return input?.let { HtmlUtils.htmlEscape(it) } ?: ""
-        }
+        private fun sanitizeInput(input: String?): String = input?.let { HtmlUtils.htmlEscape(it) } ?: ""
     }
 
     /**
@@ -113,7 +111,7 @@ class GlobalExceptionHandler {
         val response = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
             error = "INVALID_ARGUMENT",
-            message = sanitizeInput(ex.message) ?: "Invalid request parameter",
+            message = sanitizeInput(ex.message),
             path = sanitizeInput(request.requestURI),
         )
 
@@ -134,7 +132,7 @@ class GlobalExceptionHandler {
         val response = ErrorResponse(
             status = HttpStatus.NOT_FOUND.value(),
             error = "RESOURCE_NOT_FOUND",
-            message = sanitizeInput(ex.message) ?: "Requested resource not found",
+            message = sanitizeInput(ex.message),
             path = sanitizeInput(request.requestURI),
         )
 

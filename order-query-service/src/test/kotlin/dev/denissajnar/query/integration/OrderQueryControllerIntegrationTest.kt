@@ -54,7 +54,7 @@ class OrderQueryControllerIntegrationTest : SpringBootTestParent() {
         RestAssured.given()
             .queryParam("status", Status.PENDING.name)
             .whenever()
-            .get("/by-status")
+            .get()
             .then()
             .log().ifValidationFails()
             .statusCode(200)
@@ -67,7 +67,7 @@ class OrderQueryControllerIntegrationTest : SpringBootTestParent() {
         RestAssured.given()
             .queryParam("status", "INVALID_STATUS")
             .whenever()
-            .get("/by-status")
+            .get()
             .then()
             .log().ifValidationFails()
             .statusCode(400)
@@ -89,7 +89,7 @@ class OrderQueryControllerIntegrationTest : SpringBootTestParent() {
             RestAssured.given()
                 .queryParam("status", status.name)
                 .whenever()
-                .get("/by-status")
+                .get()
                 .then()
                 .log().ifValidationFails()
                 .statusCode(200)
@@ -99,11 +99,48 @@ class OrderQueryControllerIntegrationTest : SpringBootTestParent() {
     }
 
     @Test
+    fun `should return all orders when no query parameters provided`() {
+        RestAssured.given()
+            .whenever()
+            .get()
+            .then()
+            .log().ifValidationFails()
+            .statusCode(200)
+            .contentType(ContentType.JSON)
+            .body("size()", greaterThanOrEqualTo(0))
+    }
+
+    @Test
+    fun `should return orders by customer and status combined filtering`() {
+        RestAssured.given()
+            .queryParam("customerId", 1)
+            .queryParam("status", Status.PENDING.name)
+            .whenever()
+            .get()
+            .then()
+            .log().ifValidationFails()
+            .statusCode(200)
+            .contentType(ContentType.JSON)
+            .body("size()", greaterThanOrEqualTo(0))
+    }
+
+    @Test
+    fun `should return 400 when getting orders by combined filtering with invalid customer id`() {
+        RestAssured.given()
+            .queryParam("customerId", -1)
+            .queryParam("status", Status.PENDING.name)
+            .whenever()
+            .get()
+            .then()
+            .log().ifValidationFails()
+            .statusCode(400)
+    }
+
+    @Test
     fun `should handle concurrent requests for different customers`() {
         val customerId1 = 1L
         val customerId2 = 2L
 
-        // Make concurrent requests for different customers
         val response1 = RestAssured.given()
             .queryParam("customerId", customerId1)
             .whenever()
@@ -122,15 +159,12 @@ class OrderQueryControllerIntegrationTest : SpringBootTestParent() {
             .extract()
             .response()
 
-        // Both requests should succeed
         assert(response1.statusCode == 200)
         assert(response2.statusCode == 200)
     }
 
     @Test
     fun `should validate order response structure when order exists`() {
-        // This test assumes there's at least one order in the database
-        // In a real scenario, you might want to create test data first
         RestAssured.given()
             .queryParam("customerId", 1)
             .whenever()
@@ -156,13 +190,14 @@ class OrderQueryControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should handle missing query parameters gracefully`() {
-        // Test request without customerId parameter
         RestAssured.given()
             .whenever()
             .get()
             .then()
             .log().ifValidationFails()
-            .statusCode(400) // Should return 400 as customerId is required
+            .statusCode(200)
+            .contentType(ContentType.JSON)
+            .body("size()", greaterThanOrEqualTo(0))
     }
 
     @Test
@@ -185,7 +220,7 @@ class OrderQueryControllerIntegrationTest : SpringBootTestParent() {
         RestAssured.given()
             .queryParam("status", Status.PENDING.name)
             .whenever()
-            .get("/by-status")
+            .get()
             .then()
             .log().ifValidationFails()
             .statusCode(200)
@@ -195,7 +230,6 @@ class OrderQueryControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should validate API endpoints are accessible`() {
-        // Test all endpoints are reachable
         RestAssured.given()
             .queryParam("customerId", 1)
             .whenever()
@@ -206,13 +240,19 @@ class OrderQueryControllerIntegrationTest : SpringBootTestParent() {
         RestAssured.given()
             .queryParam("status", Status.PENDING.name)
             .whenever()
-            .get("/by-status")
+            .get()
             .then()
             .statusCode(anyOf(equalTo(200), equalTo(400)))
 
         RestAssured.given()
             .whenever()
             .get("/1")
+            .then()
+            .statusCode(anyOf(equalTo(200), equalTo(404)))
+
+        RestAssured.given()
+            .whenever()
+            .get("/order/550e8400-e29b-41d4-a716-446655440000")
             .then()
             .statusCode(anyOf(equalTo(200), equalTo(404)))
     }

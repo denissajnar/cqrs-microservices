@@ -2,6 +2,7 @@ package dev.denissajnar.command
 
 import dev.denissajnar.command.config.TestcontainersConfiguration
 import dev.denissajnar.command.repository.OrderCommandRepository
+import dev.denissajnar.command.repository.OutboxEventRepository
 import io.restassured.RestAssured
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -23,6 +24,9 @@ abstract class SpringBootTestParent {
     @Autowired
     lateinit var orderCommandRepository: OrderCommandRepository
 
+    @Autowired
+    lateinit var outboxEventRepository: OutboxEventRepository
+
     @BeforeEach
     fun setUp() {
         RestAssured.port = port
@@ -32,5 +36,6 @@ abstract class SpringBootTestParent {
     @AfterEach
     fun tearDown() {
         orderCommandRepository.deleteAll()
+        outboxEventRepository.deleteAll()
     }
 }

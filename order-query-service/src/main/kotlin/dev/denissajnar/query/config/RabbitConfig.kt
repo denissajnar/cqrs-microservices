@@ -34,18 +34,20 @@ class RabbitConfig {
      * Declares the queue for order query service to consume events
      */
     @Bean
-    fun ordersQueue(): Queue = QueueBuilder
-        .durable(queueName)
-        .build()
+    fun ordersQueue(): Queue =
+        QueueBuilder
+            .durable(queueName)
+            .build()
 
     /**
      * Binds the queue to the exchange with routing key
      */
     @Bean
-    fun binding(): Binding = BindingBuilder
-        .bind(ordersQueue())
-        .to(ordersExchange())
-        .with(routingKey)
+    fun binding(): Binding =
+        BindingBuilder
+            .bind(ordersQueue())
+            .to(ordersExchange())
+            .with(routingKey)
 
     /**
      * Configures JSON message converter for RabbitMQ
@@ -57,7 +59,8 @@ class RabbitConfig {
      * Configures RabbitTemplate with JSON converter (for potential publishing if needed)
      */
     @Bean
-    fun rabbitTemplate(connectionFactory: ConnectionFactory): RabbitTemplate = RabbitTemplate(connectionFactory).apply {
-        messageConverter = jacksonJsonMessageConverter()
-    }
+    fun rabbitTemplate(connectionFactory: ConnectionFactory): RabbitTemplate =
+        RabbitTemplate(connectionFactory).apply {
+            messageConverter = jacksonJsonMessageConverter()
+        }
 }

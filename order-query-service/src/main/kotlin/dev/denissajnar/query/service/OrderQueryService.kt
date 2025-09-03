@@ -64,4 +64,46 @@ class OrderQueryService(
             .also { orders ->
                 logger.debug { "Found ${orders.size} orders with status: $status" }
             }
+
+    /**
+     * Retrieves orders by customer ID and status
+     * @param customerId the customer identifier
+     * @param status the order status
+     * @return list of order DTOs for the given customer and status
+     */
+    fun getOrdersByCustomerAndStatus(customerId: Long, status: Status): List<OrderQueryDTO> =
+        orderQueryRepository.findByCustomerIdAndStatusOrderByCreatedAtDesc(customerId, status)
+            .toDTOs()
+            .also { orders ->
+                logger.debug { "Found ${orders.size} orders for customer: $customerId" }
+            }
+
+    /**
+     * Retrieves an order by its order ID
+     * @param orderId the order identifier from command side
+     * @return the order DTO or null if not found
+     */
+    fun findOrderByOrderId(orderId: String): OrderQueryDTO? =
+        orderQueryRepository.findByOrderId(orderId)
+            ?.let { order ->
+                logger.debug { "Found order with order ID: $orderId" }
+                order.toDTO()
+            }
+            .also { result ->
+                if (result == null) {
+                    logger.debug { "OrderQuery not found with order ID: $orderId" }
+                }
+            }
+
+    /**
+     * Retrieves all orders
+     * @return list of all order DTOs
+     */
+    fun getAllOrders(): List<OrderQueryDTO> =
+        orderQueryRepository.findAll()
+            .toList()
+            .toDTOs()
+            .also { orders ->
+                logger.debug { "Found ${orders.size} total orders" }
+            }
 }
