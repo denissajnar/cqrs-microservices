@@ -79,21 +79,36 @@ class OutboxEventProcessor(
      *                    exchange, routing key, event payload, and more.
      */
     private fun processEvent(outboxEvent: OutboxEvent) {
-        val domainEvent =
-            objectMapper.readValue(outboxEvent.eventPayload, EventType.fromTypeName(outboxEvent.eventType).eventClass)
+        try {
+            val domainEvent =
+                objectMapper.readValue(
+                    outboxEvent.eventPayload,
+                    EventType.fromTypeName(outboxEvent.eventType).eventClass,
+                )
 
-        rabbitTemplate.convertAndSend(
-            outboxEvent.exchange,
-            outboxEvent.routingKey,
-            domainEvent,
+            rabbitTemplate.convertAndSend(
+                outboxEvent.exchange,
+                outboxEvent.routingKey,
+                domainEvent,
+            )
+
+            val processedEvent = outboxEvent.copy(
+                processed = true,
+                processedAt = Instant.now(),
+            )
+            outboxEventRepository.save(processedEvent)
+
+            logger.info { "Successfully published outbox event: ${outboxEvent.eventType} with ID: ${outboxEvent.eventId}" }
+        } catch (exception: Exception) {
+            logger.error(exception) { "Failed to process outbox event: ${outboxEvent.eventType} with ID: ${outboxEvent.eventId}" }
+            markEventAsFailed(outboxEvent, exception.message ?: "Unknown error occurred")
+        }
+    }
+
+    private fun markEventAsFailed(outboxEvent: OutboxEvent, errorMessage: String) {
+        val failedEvent = outboxEvent.copy(
+            errorMessage = errorMessage.take(500), // Limit error message length
         )
-
-        val processedEvent = outboxEvent.copy(
-            processed = true,
-            processedAt = Instant.now(),
-        )
-        outboxEventRepository.save(processedEvent)
-
-        logger.info { "Successfully published outbox event: ${outboxEvent.eventType} with ID: ${outboxEvent.eventId}" }
+        outboxEventRepository.save(failedEvent)
     }
 }

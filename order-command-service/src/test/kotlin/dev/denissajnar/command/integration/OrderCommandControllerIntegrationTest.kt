@@ -38,6 +38,18 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
             .body("totalAmount", equalTo(99.99f))
             .body("status", equalTo("PENDING"))
             .body("createdAt", notNullValue())
+
+        val outboxEvents = outboxEventRepository.findAll()
+        assert(outboxEvents.isNotEmpty()) { "Outbox should contain events after order creation" }
+        assert(outboxEvents.any { it.eventType == "OrderEvent" }) { "Outbox should contain OrderEvent for created order" }
+
+        val orderEvents = outboxEvents.filter { it.eventType == "OrderEvent" }
+        orderEvents.forEach { event ->
+            assert(event.eventId.isNotEmpty()) { "Event should have a valid eventId" }
+            assert(event.eventPayload.isNotEmpty()) { "Event should have a valid payload" }
+            assert(event.routingKey.isNotEmpty()) { "Event should have a valid routing key" }
+            assert(event.exchange.isNotEmpty()) { "Event should have a valid exchange" }
+        }
     }
 
     @Test
@@ -97,6 +109,10 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
         val orderId = createResponse.path<String>("id")
 
+        val outboxEventsAfterCreate = outboxEventRepository.findAll()
+        assert(outboxEventsAfterCreate.isNotEmpty()) { "Outbox should contain events after order creation" }
+        assert(outboxEventsAfterCreate.any { it.eventType == "OrderEvent" }) { "Outbox should contain OrderEvent for created order" }
+
         val updateOrderDto = UpdateOrderCommandDTO(
             customerId = 2L,
             totalAmount = BigDecimal("149.99"),
@@ -118,6 +134,19 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
             .body("totalAmount", equalTo(149.99f))
             .body("status", equalTo("CONFIRMED"))
             .body("createdAt", notNullValue())
+
+        val outboxEventsAfterUpdate = outboxEventRepository.findAll()
+        assert(outboxEventsAfterUpdate.size > outboxEventsAfterCreate.size) { "Outbox should contain more events after order update" }
+
+        val orderEvents = outboxEventsAfterUpdate.filter { it.eventType == "OrderEvent" }
+        assert(orderEvents.size >= 2) { "Outbox should contain at least 2 OrderEvent entries (create and update)" }
+
+        orderEvents.forEach { event ->
+            assert(event.eventId.isNotEmpty()) { "Event should have a valid eventId" }
+            assert(event.eventPayload.isNotEmpty()) { "Event should have a valid payload" }
+            assert(event.routingKey.isNotEmpty()) { "Event should have a valid routing key" }
+            assert(event.exchange.isNotEmpty()) { "Event should have a valid exchange" }
+        }
     }
 
     @Test
@@ -194,12 +223,29 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
         val orderId = createResponse.path<String>("id")
 
+        val outboxEventsAfterCreate = outboxEventRepository.findAll()
+        assert(outboxEventsAfterCreate.isNotEmpty()) { "Outbox should contain events after order creation" }
+        assert(outboxEventsAfterCreate.any { it.eventType == "OrderEvent" }) { "Outbox should contain OrderEvent for created order" }
+
         RestAssured.given()
             .whenever()
             .delete("/{id}", orderId)
             .then()
             .log().ifValidationFails()
             .statusCode(200)
+
+        val outboxEventsAfterDelete = outboxEventRepository.findAll()
+        assert(outboxEventsAfterDelete.size > outboxEventsAfterCreate.size) { "Outbox should contain more events after order deletion" }
+
+        val orderEvents = outboxEventsAfterDelete.filter { it.eventType == "OrderEvent" }
+        assert(orderEvents.size >= 2) { "Outbox should contain at least 2 OrderEvent entries (create and delete)" }
+
+        orderEvents.forEach { event ->
+            assert(event.eventId.isNotEmpty()) { "Event should have a valid eventId" }
+            assert(event.eventPayload.isNotEmpty()) { "Event should have a valid payload" }
+            assert(event.routingKey.isNotEmpty()) { "Event should have a valid routing key" }
+            assert(event.exchange.isNotEmpty()) { "Event should have a valid exchange" }
+        }
     }
 
     @Test
@@ -248,5 +294,18 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
         val orderId2 = response2.path<String>("id")
 
         assert(orderId1 != orderId2)
+
+        val outboxEvents = outboxEventRepository.findAll()
+        assert(outboxEvents.isNotEmpty()) { "Outbox should contain events after concurrent order creation" }
+
+        val orderEvents = outboxEvents.filter { it.eventType == "OrderEvent" }
+        assert(orderEvents.size >= 2) { "Outbox should contain at least 2 OrderEvent entries for concurrent creation" }
+
+        orderEvents.forEach { event ->
+            assert(event.eventId.isNotEmpty()) { "Event should have a valid eventId" }
+            assert(event.eventPayload.isNotEmpty()) { "Event should have a valid payload" }
+            assert(event.routingKey.isNotEmpty()) { "Event should have a valid routing key" }
+            assert(event.exchange.isNotEmpty()) { "Event should have a valid exchange" }
+        }
     }
 }

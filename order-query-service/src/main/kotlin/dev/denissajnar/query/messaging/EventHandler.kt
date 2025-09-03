@@ -47,15 +47,13 @@ class EventHandler(
         eventPayload: String,
     ) where T : DomainEvent {
         try {
-            val eventIdLong = convertStringToLong(event.eventId)
-
-            if (inboxEventRepository.existsByEventId(eventIdLong)) {
+            if (inboxEventRepository.existsByEventId(event.eventId)) {
                 logger.debug { "Event already exists in inbox, skipping: $eventType with ID: ${event.eventId}" }
                 return
             }
 
             val inboxEvent = InboxEvent(
-                eventId = eventIdLong,
+                eventId = event.eventId,
                 messageId = event.messageId,
                 eventType = eventType,
                 processingStatus = ProcessingStatus.DEFERRED,
@@ -71,11 +69,6 @@ class EventHandler(
         }
     }
 
-    /**
-     * Converts String eventId to Long for database storage
-     * Uses consistent hash function to ensure same String always produces same Long
-     */
-    private fun convertStringToLong(eventId: String): Long = eventId.hashCode().toLong()
 
     /**
      * Handles unified OrderEvent for all order operations (create, update, delete)

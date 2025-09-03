@@ -84,25 +84,30 @@ class InboxEventProcessor(
         EventType.fromTypeName(eventType).eventClass
 
     private fun processEvent(inboxEvent: InboxEvent) {
-        if (inboxEvent.eventPayload.isNullOrBlank()) {
-            logger.error { "Event payload is missing for event: ${inboxEvent.eventType} with ID: ${inboxEvent.eventId}" }
-            markEventAsFailed(inboxEvent, "Event payload is missing")
-            return
+        try {
+            if (inboxEvent.eventPayload.isNullOrBlank()) {
+                logger.error { "Event payload is missing for event: ${inboxEvent.eventType} with ID: ${inboxEvent.eventId}" }
+                markEventAsFailed(inboxEvent, "Event payload is missing")
+                return
+            }
+
+            val eventClass = getEventClass(inboxEvent.eventType)
+            val domainEvent = objectMapper.readValue(inboxEvent.eventPayload, eventClass) as OrderEvent
+
+            processOrderEvent(domainEvent)
+
+            val processedEvent = inboxEvent.copy(
+                processingStatus = ProcessingStatus.PROCESSED,
+                processedAt = Instant.now(),
+                errorMessage = null,
+            )
+            inboxEventRepository.save(processedEvent)
+
+            logger.info { "Successfully processed inbox event: ${inboxEvent.eventType} with ID: ${inboxEvent.eventId}" }
+        } catch (exception: Exception) {
+            logger.error(exception) { "Failed to process inbox event: ${inboxEvent.eventType} with ID: ${inboxEvent.eventId}" }
+            markEventAsFailed(inboxEvent, exception.message ?: "Unknown error occurred")
         }
-
-        val eventClass = getEventClass(inboxEvent.eventType)
-        val domainEvent = objectMapper.readValue(inboxEvent.eventPayload, eventClass) as OrderEvent
-
-        processOrderEvent(domainEvent)
-
-        val processedEvent = inboxEvent.copy(
-            processingStatus = ProcessingStatus.PROCESSED,
-            processedAt = Instant.now(),
-            errorMessage = null,
-        )
-        inboxEventRepository.save(processedEvent)
-
-        logger.info { "Successfully processed inbox event: ${inboxEvent.eventType} with ID: ${inboxEvent.eventId}" }
     }
 
     private fun markEventAsFailed(inboxEvent: InboxEvent, errorMessage: String) {

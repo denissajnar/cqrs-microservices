@@ -41,8 +41,17 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
             .extract()
             .response()
 
-        val orderId = response.path<String>("id")
-        println("[DEBUG_LOG] Created order with ID: $orderId")
+        val outboxEvents = outboxEventRepository.findAll()
+        assert(outboxEvents.isNotEmpty()) { "Outbox should contain events after order creation" }
+        assert(outboxEvents.any { it.eventType == "OrderEvent" }) { "Outbox should contain OrderEvent for created order" }
+
+        val orderEvents = outboxEvents.filter { it.eventType == "OrderEvent" }
+        orderEvents.forEach { event ->
+            assert(event.eventId.isNotEmpty()) { "Event should have a valid eventId" }
+            assert(event.eventPayload.isNotEmpty()) { "Event should have a valid payload" }
+            assert(event.routingKey.isNotEmpty()) { "Event should have a valid routing key" }
+            assert(event.exchange.isNotEmpty()) { "Event should have a valid exchange" }
+        }
     }
 
     @Test
@@ -63,6 +72,10 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
             .response()
 
         val orderId = createResponse.path<String>("id")
+
+        val outboxEventsAfterCreate = outboxEventRepository.findAll()
+        assert(outboxEventsAfterCreate.isNotEmpty()) { "Outbox should contain events after order creation" }
+        assert(outboxEventsAfterCreate.any { it.eventType == "OrderEvent" }) { "Outbox should contain OrderEvent for created order" }
 
         val updateOrderDto = UpdateOrderCommandDTO(
             customerId = 3L,
@@ -87,9 +100,18 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
             .extract()
             .response()
 
-        val updateCommandId = updateResponse.path<String>("id")
+        val outboxEventsAfterUpdate = outboxEventRepository.findAll()
+        assert(outboxEventsAfterUpdate.size > outboxEventsAfterCreate.size) { "Outbox should contain more events after order update" }
 
-        println("[DEBUG_LOG] Updated order $orderId with new command ID: $updateCommandId")
+        val orderEvents = outboxEventsAfterUpdate.filter { it.eventType == "OrderEvent" }
+        assert(orderEvents.size >= 2) { "Outbox should contain at least 2 OrderEvent entries (create and update)" }
+
+        orderEvents.forEach { event ->
+            assert(event.eventId.isNotEmpty()) { "Event should have a valid eventId" }
+            assert(event.eventPayload.isNotEmpty()) { "Event should have a valid payload" }
+            assert(event.routingKey.isNotEmpty()) { "Event should have a valid routing key" }
+            assert(event.exchange.isNotEmpty()) { "Event should have a valid exchange" }
+        }
     }
 
     @Test
@@ -111,6 +133,10 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
 
         val orderId = createResponse.path<String>("id")
 
+        val outboxEventsAfterCreate = outboxEventRepository.findAll()
+        assert(outboxEventsAfterCreate.isNotEmpty()) { "Outbox should contain events after order creation" }
+        assert(outboxEventsAfterCreate.any { it.eventType == "OrderEvent" }) { "Outbox should contain OrderEvent for created order" }
+
         RestAssured.given()
             .whenever()
             .delete("/{id}", orderId)
@@ -118,7 +144,18 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
             .log().ifValidationFails()
             .statusCode(200)
 
-        println("[DEBUG_LOG] Deleted order $orderId successfully")
+        val outboxEventsAfterDelete = outboxEventRepository.findAll()
+        assert(outboxEventsAfterDelete.size > outboxEventsAfterCreate.size) { "Outbox should contain more events after order deletion" }
+
+        val orderEvents = outboxEventsAfterDelete.filter { it.eventType == "OrderEvent" }
+        assert(orderEvents.size >= 2) { "Outbox should contain at least 2 OrderEvent entries (create and delete)" }
+
+        orderEvents.forEach { event ->
+            assert(event.eventId.isNotEmpty()) { "Event should have a valid eventId" }
+            assert(event.eventPayload.isNotEmpty()) { "Event should have a valid payload" }
+            assert(event.routingKey.isNotEmpty()) { "Event should have a valid routing key" }
+            assert(event.exchange.isNotEmpty()) { "Event should have a valid exchange" }
+        }
     }
 
     @Test
@@ -147,7 +184,11 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
             orderIds.add(response.path("id"))
         }
 
-        println("[DEBUG_LOG] Created ${orderIds.size} orders: $orderIds")
+        val outboxEventsAfterCreates = outboxEventRepository.findAll()
+        assert(outboxEventsAfterCreates.isNotEmpty()) { "Outbox should contain events after batch order creation" }
+
+        val createOrderEvents = outboxEventsAfterCreates.filter { it.eventType == "OrderEvent" }
+        assert(createOrderEvents.size >= customers.size) { "Outbox should contain at least ${customers.size} OrderEvent entries for batch creation" }
 
         orderIds.take(2).forEach { orderId ->
             val updateOrderDto = UpdateOrderCommandDTO(
@@ -167,7 +208,18 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
                 .body("status", equalTo("PROCESSING"))
         }
 
-        println("[DEBUG_LOG] Updated first 2 orders to PROCESSING status")
+        val outboxEventsAfterUpdates = outboxEventRepository.findAll()
+        assert(outboxEventsAfterUpdates.size > outboxEventsAfterCreates.size) { "Outbox should contain more events after batch updates" }
+
+        val allOrderEvents = outboxEventsAfterUpdates.filter { it.eventType == "OrderEvent" }
+        assert(allOrderEvents.size >= customers.size + 2) { "Outbox should contain at least ${customers.size + 2} OrderEvent entries (${customers.size} creates + 2 updates)" }
+
+        allOrderEvents.forEach { event ->
+            assert(event.eventId.isNotEmpty()) { "Event should have a valid eventId" }
+            assert(event.eventPayload.isNotEmpty()) { "Event should have a valid payload" }
+            assert(event.routingKey.isNotEmpty()) { "Event should have a valid routing key" }
+            assert(event.exchange.isNotEmpty()) { "Event should have a valid exchange" }
+        }
     }
 
     @Test
@@ -213,8 +265,6 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
             .put("/{id}", "507f1f77bcf86cd799439011")
             .then()
             .statusCode(404)
-
-        println("[DEBUG_LOG] Error handling scenarios tested successfully")
     }
 
     @Test
@@ -243,15 +293,10 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
             .response()
 
         val orderId = response.path<String>("id")
-        val createdAt = response.path<String>("createdAt")
         val totalAmount = response.path<Float>("totalAmount")
 
         assert(orderId.length == 24) { "Order ID should be MongoDB ObjectId" }
         assert(totalAmount == 299.99f) { "Total amount mismatch" }
-
-        println("[DEBUG_LOG] Advanced RestAssured features demonstrated for order: $orderId")
-        println("[DEBUG_LOG] Order created at: $createdAt")
-        println("[DEBUG_LOG] Total amount: $totalAmount")
     }
 
     @Test
@@ -279,12 +324,21 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
             orderIds.add(response.path("id"))
         }
 
-        println("[DEBUG_LOG] Created $numberOfConcurrentOrders concurrent orders")
-
         assert(orderIds.toSet().size == numberOfConcurrentOrders) {
             "All order IDs should be unique"
         }
 
-        println("[DEBUG_LOG] All order IDs are unique: ${orderIds.toSet().size == numberOfConcurrentOrders}")
+        val outboxEvents = outboxEventRepository.findAll()
+        assert(outboxEvents.isNotEmpty()) { "Outbox should contain events after concurrent order creation" }
+
+        val orderEvents = outboxEvents.filter { it.eventType == "OrderEvent" }
+        assert(orderEvents.size >= numberOfConcurrentOrders) { "Outbox should contain at least $numberOfConcurrentOrders OrderEvent entries for concurrent creation" }
+
+        orderEvents.forEach { event ->
+            assert(event.eventId.isNotEmpty()) { "Event should have a valid eventId" }
+            assert(event.eventPayload.isNotEmpty()) { "Event should have a valid payload" }
+            assert(event.routingKey.isNotEmpty()) { "Event should have a valid routing key" }
+            assert(event.exchange.isNotEmpty()) { "Event should have a valid exchange" }
+        }
     }
 }

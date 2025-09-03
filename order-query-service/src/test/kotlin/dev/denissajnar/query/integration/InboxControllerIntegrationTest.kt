@@ -3,14 +3,12 @@ package dev.denissajnar.query.integration
 import dev.denissajnar.query.SpringBootTestParent
 import dev.denissajnar.query.entity.InboxEvent
 import dev.denissajnar.query.entity.ProcessingStatus
-import dev.denissajnar.query.repository.InboxEventRepository
 import dev.denissajnar.query.util.whenever
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import java.time.Instant
 import java.util.*
 
@@ -20,14 +18,10 @@ import java.util.*
  */
 class InboxControllerIntegrationTest : SpringBootTestParent() {
 
-    @Autowired
-    lateinit var inboxEventRepository: InboxEventRepository
-
     @BeforeEach
     override fun setUp() {
         super.setUp()
         RestAssured.basePath = "/api/v1/inbox"
-        inboxEventRepository.deleteAll()
     }
 
     @Test
@@ -365,7 +359,7 @@ class InboxControllerIntegrationTest : SpringBootTestParent() {
         eventType: String = "TestEvent",
     ): InboxEvent {
         return InboxEvent(
-            eventId = System.nanoTime(),
+            eventId = System.nanoTime().toString(),
             messageId = UUID.randomUUID().toString(),
             eventType = eventType,
             processingStatus = status,

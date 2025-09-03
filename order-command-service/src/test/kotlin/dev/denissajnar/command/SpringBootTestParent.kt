@@ -36,5 +36,6 @@ abstract class SpringBootTestParent {
     @AfterEach
     fun tearDown() {
         orderCommandRepository.deleteAll()
+        outboxEventRepository.deleteAll()
     }
 }

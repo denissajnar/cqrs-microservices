@@ -18,7 +18,7 @@ interface InboxEventRepository : JpaRepository<InboxEvent, Long> {
     /**
      * Check if an event with the given ID exists
      */
-    fun existsByEventId(eventId: Long): Boolean
+    fun existsByEventId(eventId: String): Boolean
 
     /**
      * Find all events by processing status ordered by creation time

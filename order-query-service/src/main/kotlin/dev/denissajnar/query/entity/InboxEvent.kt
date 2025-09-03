@@ -15,7 +15,7 @@ data class InboxEvent(
     val id: Long? = null,
 
     @Column(name = "event_id", nullable = false, unique = true)
-    val eventId: Long,
+    val eventId: String,
 
     @Column(name = "message_id")
     val messageId: String? = null,
