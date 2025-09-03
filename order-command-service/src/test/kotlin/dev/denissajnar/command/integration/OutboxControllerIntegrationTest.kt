@@ -3,6 +3,7 @@ package dev.denissajnar.command.integration
 import dev.denissajnar.command.SpringBootTestParent
 import dev.denissajnar.command.dto.CreateOrderCommandDTO
 import dev.denissajnar.command.util.whenever
+import dev.denissajnar.shared.events.EventType
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import org.hamcrest.Matchers.*
@@ -292,10 +293,10 @@ class OutboxControllerIntegrationTest : SpringBootTestParent() {
 
         val events = response.jsonPath().getList<Map<String, Any>>("$")
         val hasOrderEvent = events.any { event ->
-            event["eventType"] == "OrderEvent"
+            event["eventType"] == EventType.ORDER_EVENT.typeName
         }
 
-        assert(hasOrderEvent) { "Should contain at least one OrderEvent" }
+        assert(hasOrderEvent) { "Should contain at least one ${EventType.ORDER_EVENT.typeName}" }
     }
 
     @Test

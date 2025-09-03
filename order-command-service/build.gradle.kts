@@ -5,7 +5,6 @@ plugins {
     kotlin("plugin.spring")
     id("org.springframework.boot")
     id("io.spring.dependency-management")
-    id("org.asciidoctor.jvm.convert")
     id("org.graalvm.buildtools.native")
 }
 
@@ -54,11 +53,6 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
-}
-
-tasks.asciidoctor {
-    inputs.dir(project.extra["snippetsDir"]!!)
-    dependsOn(tasks.test)
 }
 
 tasks.bootBuildImage {

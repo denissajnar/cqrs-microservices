@@ -27,12 +27,6 @@ data class InboxEvent(
     @Column(name = "processing_status", nullable = false, length = 20)
     val processingStatus: ProcessingStatus = ProcessingStatus.PROCESSED,
 
-    @Column(name = "target_entity_id", length = 100)
-    val targetEntityId: String? = null,
-
-    @Column(name = "depends_on_event_type", length = 100)
-    val dependsOnEventType: String? = null,
-
     @Column(name = "processed_at")
     val processedAt: Instant? = null,
 

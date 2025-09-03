@@ -1,11 +1,11 @@
 package dev.denissajnar.shared.model
 
 /**
- * Represents the various statuses an order can have in the system.
+ * Enum representing the various statuses that an entity or process can have.
  *
- * The status transitions typically progress from PENDING to COMPLETED, with intermediate
- * statuses indicating the current state of the order. Certain statuses such as CANCELLED
- * or FAILED indicate a terminal state where the order cannot proceed further.
+ * The statuses are used to define the state or progress of a specific operation
+ * or lifecycle. These values are commonly associated with workflows, order
+ * processing, or event-based systems to determine and track the current state.
  */
 enum class Status {
     PENDING,

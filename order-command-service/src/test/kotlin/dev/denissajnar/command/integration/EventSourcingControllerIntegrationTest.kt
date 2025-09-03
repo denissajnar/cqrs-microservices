@@ -162,7 +162,7 @@ class EventSourcingControllerIntegrationTest : SpringBootTestParent() {
             .body("aggregateId", equalTo(orderId))
             .body("totalEvents", equalTo(1))
             .body("currentVersion", equalTo(1))
-            .body("isDeleted", equalTo(false))
+            .body("deleted", equalTo(false))
             .body("createdAt", notNullValue())
             .body("lastModifiedAt", notNullValue())
     }

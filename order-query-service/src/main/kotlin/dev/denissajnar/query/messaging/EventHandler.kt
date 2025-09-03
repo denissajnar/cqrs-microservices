@@ -8,6 +8,7 @@ import dev.denissajnar.query.entity.InboxEvent
 import dev.denissajnar.query.entity.ProcessingStatus
 import dev.denissajnar.query.repository.InboxEventRepository
 import dev.denissajnar.shared.events.DomainEvent
+import dev.denissajnar.shared.events.EventType
 import dev.denissajnar.shared.events.OrderEvent
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.amqp.core.Message
@@ -90,6 +91,6 @@ class EventHandler(
 
         val event: OrderEvent = objectMapper.readValue(messageBody)
 
-        storeEventInInbox(event, event::class.simpleName ?: "UnknownEvent", messageBody)
+        storeEventInInbox(event, EventType.fromEvent(event).typeName, messageBody)
     }
 }

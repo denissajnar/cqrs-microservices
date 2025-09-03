@@ -7,7 +7,6 @@ plugins {
     id("org.springframework.boot")
     id("io.spring.dependency-management")
     id("org.hibernate.orm")
-    id("org.asciidoctor.jvm.convert")
     id("org.graalvm.buildtools.native")
 }
 
@@ -66,11 +65,6 @@ allOpen {
 
 tasks.withType<Test> {
     useJUnitPlatform()
-}
-
-tasks.asciidoctor {
-    inputs.dir(project.extra["snippetsDir"]!!)
-    dependsOn(tasks.test)
 }
 
 tasks.bootBuildImage {

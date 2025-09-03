@@ -6,7 +6,6 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7" apply false
     id("org.hibernate.orm") version "7.1.0.Final" apply false
     id("org.graalvm.buildtools.native") version "0.11.0" apply false
-    id("org.asciidoctor.jvm.convert") version "3.3.2" apply false
 }
 
 allprojects {

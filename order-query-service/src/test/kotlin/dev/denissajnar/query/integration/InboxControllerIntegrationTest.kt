@@ -267,8 +267,6 @@ class InboxControllerIntegrationTest : SpringBootTestParent() {
         assert(event.containsKey("messageId"))
         assert(event.containsKey("eventType"))
         assert(event.containsKey("processingStatus"))
-        assert(event.containsKey("targetEntityId"))
-        assert(event.containsKey("dependsOnEventType"))
         assert(event.containsKey("processedAt"))
         assert(event.containsKey("createdAt"))
         assert(event.containsKey("eventPayload"))
@@ -371,8 +369,6 @@ class InboxControllerIntegrationTest : SpringBootTestParent() {
             messageId = UUID.randomUUID().toString(),
             eventType = eventType,
             processingStatus = status,
-            targetEntityId = "test-entity-id",
-            dependsOnEventType = null,
             processedAt = if (status == ProcessingStatus.PROCESSED) Instant.now() else null,
             createdAt = Instant.now(),
             errorMessage = if (status == ProcessingStatus.FAILED) "Test error message" else null,

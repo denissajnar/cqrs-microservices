@@ -9,6 +9,7 @@ import dev.denissajnar.query.entity.ProcessingStatus
 import dev.denissajnar.query.repository.InboxEventRepository
 import dev.denissajnar.query.repository.OrderQueryRepository
 import dev.denissajnar.shared.events.DomainEvent
+import dev.denissajnar.shared.events.EventType
 import dev.denissajnar.shared.events.OrderEvent
 import dev.denissajnar.shared.events.OrderOperationType
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -77,13 +78,10 @@ class InboxEventProcessor(
     }
 
     /**
-     * Maps event type string to the unified OrderEvent class
+     * Maps event type string to the corresponding domain event class using EventType enum
      */
     private fun getEventClass(eventType: String): Class<out DomainEvent> =
-        when (eventType) {
-            "OrderCreatedEvent", "OrderUpdatedEvent", "OrderDeletedEvent" -> OrderEvent::class.java
-            else -> throw IllegalArgumentException("Unknown event type: $eventType")
-        }
+        EventType.fromTypeName(eventType).eventClass
 
     private fun processEvent(inboxEvent: InboxEvent) {
         if (inboxEvent.eventPayload.isNullOrBlank()) {

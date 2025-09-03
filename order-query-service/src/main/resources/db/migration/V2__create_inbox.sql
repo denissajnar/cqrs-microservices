@@ -8,8 +8,6 @@ CREATE TABLE IF NOT EXISTS inbox_events
     message_id            VARCHAR(255), -- RabbitMQ message ID if available
     event_type            VARCHAR(100) NOT NULL,
     processing_status     VARCHAR(20)  NOT NULL DEFAULT 'PROCESSED',
-    target_entity_id      VARCHAR(100), -- The ID of the entity this event targets (for dependency tracking)
-    depends_on_event_type VARCHAR(100), -- What event type this event depends on
     processed_at          TIMESTAMP,    -- When the event was successfully processed (null for deferred/failed)
     created_at            TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     error_message         VARCHAR(500), -- Error message for failed events
@@ -22,12 +20,6 @@ CREATE INDEX IF NOT EXISTS idx_inbox_events_event_id ON inbox_events (event_id);
 
 -- Create index on processing_status for efficient queries of deferred events
 CREATE INDEX IF NOT EXISTS idx_inbox_events_processing_status ON inbox_events (processing_status);
-
--- Create index on target_entity_id for dependency lookup
-CREATE INDEX IF NOT EXISTS idx_inbox_events_target_entity_id ON inbox_events (target_entity_id);
-
--- Create index on depends_on_event_type for dependency resolution
-CREATE INDEX IF NOT EXISTS idx_inbox_events_depends_on_event_type ON inbox_events (depends_on_event_type);
 
 -- Create index on processed_at for cleanup operations
 CREATE INDEX IF NOT EXISTS idx_inbox_events_processed_at ON inbox_events (processed_at);

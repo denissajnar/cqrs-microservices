@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import dev.denissajnar.command.domain.OutboxEvent
 import dev.denissajnar.command.repository.OutboxEventRepository
 import dev.denissajnar.shared.events.DomainEvent
+import dev.denissajnar.shared.events.EventType
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -49,7 +50,7 @@ class EventPublisher(
         val eventPayload = objectMapper.writeValueAsString(event)
         val outboxEvent = OutboxEvent(
             eventId = event.eventId,
-            eventType = event::class.simpleName ?: "UnknownEvent",
+            eventType = EventType.fromEvent(event).typeName,
             eventPayload = eventPayload,
             routingKey = routingKey,
             exchange = exchange,

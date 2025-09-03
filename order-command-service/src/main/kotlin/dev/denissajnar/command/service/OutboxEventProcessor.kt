@@ -1,9 +1,11 @@
 package dev.denissajnar.command.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import dev.denissajnar.command.domain.OutboxEvent
 import dev.denissajnar.command.repository.OutboxEventRepository
-import dev.denissajnar.shared.events.OrderEvent
+import dev.denissajnar.shared.events.EventType
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.scheduling.annotation.Scheduled
@@ -20,12 +22,15 @@ import java.time.temporal.ChronoUnit
 class OutboxEventProcessor(
     private val outboxEventRepository: OutboxEventRepository,
     private val rabbitTemplate: RabbitTemplate,
-    private val objectMapper: ObjectMapper,
 ) {
 
     companion object {
         private val logger = KotlinLogging.logger {}
         private const val MAX_BATCH_SIZE = 50
+        private val objectMapper: ObjectMapper =
+            jacksonObjectMapper().apply {
+                registerModule(JavaTimeModule())
+            }
     }
 
     /**
@@ -74,7 +79,8 @@ class OutboxEventProcessor(
      *                    exchange, routing key, event payload, and more.
      */
     private fun processEvent(outboxEvent: OutboxEvent) {
-        val domainEvent = objectMapper.readValue(outboxEvent.eventPayload, OrderEvent::class.java)
+        val domainEvent =
+            objectMapper.readValue(outboxEvent.eventPayload, EventType.fromTypeName(outboxEvent.eventType).eventClass)
 
         rabbitTemplate.convertAndSend(
             outboxEvent.exchange,
