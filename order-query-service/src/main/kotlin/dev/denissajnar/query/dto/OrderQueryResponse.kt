@@ -9,7 +9,7 @@ import java.time.Instant
  * DTO for order query responses
  */
 @Schema(description = "OrderQuery information from the query side")
-data class OrderQueryDTO(
+data class OrderQueryResponse(
 
     @field:Schema(description = "Unique order identifier", example = "1")
     val id: Long,

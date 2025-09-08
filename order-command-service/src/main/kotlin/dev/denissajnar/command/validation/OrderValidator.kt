@@ -2,8 +2,8 @@ package dev.denissajnar.command.validation
 
 import dev.denissajnar.command.domain.CommandType
 import dev.denissajnar.command.domain.OrderCommand
-import dev.denissajnar.command.dto.CreateOrderCommandDTO
-import dev.denissajnar.command.dto.UpdateOrderCommandDTO
+import dev.denissajnar.command.dto.request.CreateOrderCommandRequest
+import dev.denissajnar.command.dto.request.UpdateOrderCommandRequest
 import dev.denissajnar.command.exception.BusinessValidationException
 import dev.denissajnar.shared.model.Status
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -35,7 +35,7 @@ class OrderValidator {
     /**
      * Validates order creation request
      */
-    fun validateForCreation(dto: CreateOrderCommandDTO) {
+    fun validateForCreation(dto: CreateOrderCommandRequest) {
         logger.debug { "Validating order creation for customer: ${dto.customerId}" }
         validateCommonBusinessRules(dto.customerId, dto.totalAmount)
         logger.debug { "Order creation validation passed for customer: ${dto.customerId}" }
@@ -44,7 +44,7 @@ class OrderValidator {
     /**
      * Validates order update request
      */
-    fun validateForUpdate(dto: UpdateOrderCommandDTO, originalOrder: OrderCommand) {
+    fun validateForUpdate(dto: UpdateOrderCommandRequest, originalOrder: OrderCommand) {
         logger.debug { "Validating order update for order: ${originalOrder.id}" }
 
         validateOrderNotDeleted(originalOrder)

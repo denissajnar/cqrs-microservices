@@ -2,9 +2,9 @@ package dev.denissajnar.command.mapper
 
 import dev.denissajnar.command.domain.CommandType
 import dev.denissajnar.command.domain.OrderCommand
-import dev.denissajnar.command.dto.CreateOrderCommandDTO
-import dev.denissajnar.command.dto.OrderResponseDTO
-import dev.denissajnar.command.dto.UpdateOrderCommandDTO
+import dev.denissajnar.command.dto.request.CreateOrderCommandRequest
+import dev.denissajnar.command.dto.request.UpdateOrderCommandRequest
+import dev.denissajnar.command.dto.response.OrderResponse
 import dev.denissajnar.shared.events.OrderEvent
 import dev.denissajnar.shared.events.OrderOperationType
 import dev.denissajnar.shared.model.Status
@@ -13,7 +13,7 @@ import java.time.Instant
 /**
  * Extension function to convert CreateOrderDTO to OrderCommand domain model
  */
-fun CreateOrderCommandDTO.toCommand(): OrderCommand = OrderCommand(
+fun CreateOrderCommandRequest.toEntity(): OrderCommand = OrderCommand(
     commandType = CommandType.CREATE,
     originalOrderId = null,
     customerId = this.customerId,
@@ -24,9 +24,9 @@ fun CreateOrderCommandDTO.toCommand(): OrderCommand = OrderCommand(
 )
 
 /**
- * Extension function to convert UpdateOrderCommandDTO to OrderCommand domain model
+ * Extension function to convert UpdateOrderCommandRequest to OrderCommand domain model
  */
-fun UpdateOrderCommandDTO.toCommand(originalOrderCommand: OrderCommand): OrderCommand =
+fun UpdateOrderCommandRequest.toEntity(originalOrderCommand: OrderCommand): OrderCommand =
     OrderCommand(
         commandType = CommandType.UPDATE,
         originalOrderId = originalOrderCommand.id,
@@ -39,7 +39,7 @@ fun UpdateOrderCommandDTO.toCommand(originalOrderCommand: OrderCommand): OrderCo
 /**
  * Extension function to convert OrderCommand to OrderCommand with DELETE command type
  */
-fun OrderCommand.toDeleteCommand(): OrderCommand =
+fun OrderCommand.toDeleteEntity(): OrderCommand =
     OrderCommand(
         commandType = CommandType.DELETE,
         originalOrderId = this.id,
@@ -54,7 +54,7 @@ fun OrderCommand.toDeleteCommand(): OrderCommand =
  * Extension function to convert OrderCommand to unified OrderEvent
  * Uses the command ID as messageId and determines operationType from commandType
  */
-fun OrderCommand.toOrderEvent(): OrderEvent {
+fun OrderCommand.toEvent(): OrderEvent {
     val operationType = when (this.commandType) {
         CommandType.CREATE -> OrderOperationType.CREATE
         CommandType.UPDATE -> OrderOperationType.UPDATE
@@ -77,10 +77,10 @@ fun OrderCommand.toOrderEvent(): OrderEvent {
 }
 
 /**
- * Extension function to convert OrderCommand to OrderResponseDTO
+ * Extension function to convert OrderCommand to OrderResponse
  * Throws exception if order ID is null (should not happen after save)
  */
-fun OrderCommand.toResponseDTO(): OrderResponseDTO = OrderResponseDTO(
+fun OrderCommand.toResponse(): OrderResponse = OrderResponse(
     id = this.id.toHexString(),
     customerId = this.customerId,
     totalAmount = this.totalAmount,

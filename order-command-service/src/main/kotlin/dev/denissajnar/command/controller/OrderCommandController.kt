@@ -1,8 +1,8 @@
 package dev.denissajnar.command.controller
 
-import dev.denissajnar.command.dto.CreateOrderCommandDTO
-import dev.denissajnar.command.dto.OrderResponseDTO
-import dev.denissajnar.command.dto.UpdateOrderCommandDTO
+import dev.denissajnar.command.dto.request.CreateOrderCommandRequest
+import dev.denissajnar.command.dto.request.UpdateOrderCommandRequest
+import dev.denissajnar.command.dto.response.OrderResponse
 import dev.denissajnar.command.service.OrderCommandService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -30,7 +30,7 @@ class OrderCommandController(
 
     /**
      * Creates a new order
-     * @param dto the order creation request
+     * @param request the order creation request
      * @return the created order response
      */
     @PostMapping
@@ -46,10 +46,10 @@ class OrderCommandController(
         ],
     )
     fun createOrder(
-        @Valid @RequestBody dto: CreateOrderCommandDTO,
-    ): ResponseEntity<OrderResponseDTO> =
+        @Valid @RequestBody request: CreateOrderCommandRequest,
+    ): ResponseEntity<OrderResponse> =
         ResponseEntity.status(HttpStatus.CREATED)
-            .body(orderCommandService.createOrder(dto))
+            .body(orderCommandService.createOrder(request))
 
     /**
      * Updates an existing order
@@ -76,8 +76,8 @@ class OrderCommandController(
             message = "Order ID must be a valid 24-character hexadecimal ObjectId",
         )
         @PathVariable id: String,
-        @Valid @RequestBody dto: UpdateOrderCommandDTO,
-    ): ResponseEntity<OrderResponseDTO> =
+        @Valid @RequestBody dto: UpdateOrderCommandRequest,
+    ): ResponseEntity<OrderResponse> =
         ResponseEntity.status(HttpStatus.OK)
             .body(orderCommandService.updateOrder(id, dto))
 

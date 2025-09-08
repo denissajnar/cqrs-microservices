@@ -287,6 +287,18 @@ Content-Type: application/json
 }
 ```
 
+**Response:**
+
+```json
+{
+  "id": "507f1f77bcf86cd799439011",
+  "customerId": 1,
+  "totalAmount": 99.99,
+  "status": "PENDING",
+  "createdAt": "2025-09-08T14:18:00Z"
+}
+```
+
 #### Update Order
 
 ```http
@@ -297,6 +309,18 @@ Content-Type: application/json
   "customerId": 1,
   "totalAmount": 149.99,
   "status": "COMPLETED"
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "507f1f77bcf86cd799439011",
+  "customerId": 1,
+  "totalAmount": 149.99,
+  "status": "COMPLETED",
+  "createdAt": "2025-09-08T14:18:00Z"
 }
 ```
 
@@ -357,10 +381,29 @@ GET /api/v1/orders?status=PENDING
 GET /api/v1/orders?customerId=1&status=PENDING
 ```
 
-#### Get Order by History ID
+#### Get Order by Command-Side Order ID
 
 ```http
-GET /api/v1/orders/history/{historyId}
+GET /api/v1/orders/order/{orderId}
+```
+
+**Example:**
+
+```http
+GET /api/v1/orders/order/550e8400-e29b-41d4-a716-446655440000
+```
+
+**Response:**
+
+```json
+{
+  "id": 1,
+  "orderId": "550e8400-e29b-41d4-a716-446655440000",
+  "customerId": 1,
+  "totalAmount": 99.99,
+  "status": "PENDING",
+  "createdAt": "2025-09-08T14:18:00Z"
+}
 ```
 
 ### Status Values

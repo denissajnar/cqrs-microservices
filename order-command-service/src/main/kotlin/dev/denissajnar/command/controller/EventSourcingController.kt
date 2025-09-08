@@ -2,8 +2,8 @@ package dev.denissajnar.command.controller
 
 import dev.denissajnar.command.domain.OrderAggregate
 import dev.denissajnar.command.domain.OrderCommand
-import dev.denissajnar.command.dto.AggregateExistsDTO
-import dev.denissajnar.command.dto.AggregateVersionDTO
+import dev.denissajnar.command.dto.response.AggregateExistsRsponse
+import dev.denissajnar.command.dto.response.AggregateVersionResponse
 import dev.denissajnar.command.service.EventSourcingService
 import dev.denissajnar.shared.model.AggregateStats
 import io.swagger.v3.oas.annotations.Operation
@@ -165,10 +165,10 @@ class EventSourcingController(
             message = "Aggregate ID must be a valid 24-character hexadecimal ObjectId",
         )
         @PathVariable aggregateId: String,
-    ): ResponseEntity<AggregateExistsDTO> =
+    ): ResponseEntity<AggregateExistsRsponse> =
         ObjectId(aggregateId)
             .let(eventSourcingService::validateAggregateExists)
-            .let { ResponseEntity.ok(AggregateExistsDTO(it)) }
+            .let { ResponseEntity.ok(AggregateExistsRsponse(it)) }
 
     /**
      * Gets the current state of an aggregate
@@ -221,9 +221,9 @@ class EventSourcingController(
             message = "Aggregate ID must be a valid 24-character hexadecimal ObjectId",
         )
         @PathVariable aggregateId: String,
-    ): ResponseEntity<AggregateVersionDTO> =
+    ): ResponseEntity<AggregateVersionResponse> =
         ObjectId(aggregateId)
             .let(eventSourcingService::getLatestVersion)
-            ?.let { ResponseEntity.ok(AggregateVersionDTO(it)) }
+            ?.let { ResponseEntity.ok(AggregateVersionResponse(it)) }
             ?: ResponseEntity.notFound().build()
 }

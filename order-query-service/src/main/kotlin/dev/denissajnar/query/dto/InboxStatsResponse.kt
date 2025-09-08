@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema
  * DTO for inbox statistics
  */
 @Schema(description = "Inbox statistics response payload")
-data class InboxStatsDTO(
+data class InboxStatsResponse(
 
     @field:Schema(description = "Total number of events in the inbox", example = "100")
     val totalEvents: Long,

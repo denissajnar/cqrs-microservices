@@ -1,7 +1,7 @@
 package dev.denissajnar.command.controller
 
 import dev.denissajnar.command.domain.OutboxEvent
-import dev.denissajnar.command.dto.OutboxStatsDTO
+import dev.denissajnar.command.dto.response.OutboxStatsResponse
 import dev.denissajnar.command.service.OutboxService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -56,7 +56,7 @@ class OutboxController(
             ApiResponse(responseCode = "500", description = "Internal server error"),
         ],
     )
-    fun getOutboxStats(): ResponseEntity<OutboxStatsDTO> =
+    fun getOutboxStats(): ResponseEntity<OutboxStatsResponse> =
         ResponseEntity.ok(outboxService.getOutboxStats())
 
 

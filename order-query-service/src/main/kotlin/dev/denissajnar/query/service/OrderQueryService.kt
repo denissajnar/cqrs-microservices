@@ -1,8 +1,8 @@
 package dev.denissajnar.query.service
 
-import dev.denissajnar.query.dto.OrderQueryDTO
-import dev.denissajnar.query.mapper.toDTO
-import dev.denissajnar.query.mapper.toDTOs
+import dev.denissajnar.query.dto.OrderQueryResponse
+import dev.denissajnar.query.mapper.toResponse
+import dev.denissajnar.query.mapper.toResponses
 import dev.denissajnar.query.repository.OrderQueryRepository
 import dev.denissajnar.shared.model.Status
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -29,11 +29,11 @@ class OrderQueryService(
      * @param orderId the order identifier
      * @return the order DTO or null if not found
      */
-    fun findOrderById(orderId: Long): OrderQueryDTO? =
+    fun findOrderById(orderId: Long): OrderQueryResponse? =
         orderQueryRepository.findByIdOrNull(orderId)
             ?.let { order ->
                 logger.debug { "Found order with ID: $orderId" }
-                order.toDTO()
+                order.toResponse()
             }
             .also { result ->
                 if (result == null) {
@@ -46,9 +46,9 @@ class OrderQueryService(
      * @param customerId the customer identifier
      * @return list of order DTOs for the customer
      */
-    fun getOrdersByCustomer(customerId: Long): List<OrderQueryDTO> =
+    fun getOrdersByCustomer(customerId: Long): List<OrderQueryResponse> =
         orderQueryRepository.findByCustomerIdOrderByCreatedAtDesc(customerId)
-            .toDTOs()
+            .toResponses()
             .also { orders ->
                 logger.debug { "Found ${orders.size} orders for customer: $customerId" }
             }
@@ -58,9 +58,9 @@ class OrderQueryService(
      * @param status the order status
      * @return list of order DTOs with the given status
      */
-    fun getOrdersByStatus(status: Status): List<OrderQueryDTO> =
+    fun getOrdersByStatus(status: Status): List<OrderQueryResponse> =
         orderQueryRepository.findByStatus(status)
-            .toDTOs()
+            .toResponses()
             .also { orders ->
                 logger.debug { "Found ${orders.size} orders with status: $status" }
             }
@@ -71,9 +71,9 @@ class OrderQueryService(
      * @param status the order status
      * @return list of order DTOs for the given customer and status
      */
-    fun getOrdersByCustomerAndStatus(customerId: Long, status: Status): List<OrderQueryDTO> =
+    fun getOrdersByCustomerAndStatus(customerId: Long, status: Status): List<OrderQueryResponse> =
         orderQueryRepository.findByCustomerIdAndStatusOrderByCreatedAtDesc(customerId, status)
-            .toDTOs()
+            .toResponses()
             .also { orders ->
                 logger.debug { "Found ${orders.size} orders for customer: $customerId" }
             }
@@ -83,11 +83,11 @@ class OrderQueryService(
      * @param orderId the order identifier from command side
      * @return the order DTO or null if not found
      */
-    fun findOrderByOrderId(orderId: String): OrderQueryDTO? =
+    fun findOrderByOrderId(orderId: String): OrderQueryResponse? =
         orderQueryRepository.findByOrderId(orderId)
             ?.let { order ->
                 logger.debug { "Found order with order ID: $orderId" }
-                order.toDTO()
+                order.toResponse()
             }
             .also { result ->
                 if (result == null) {
@@ -99,10 +99,10 @@ class OrderQueryService(
      * Retrieves all orders
      * @return list of all order DTOs
      */
-    fun getAllOrders(): List<OrderQueryDTO> =
+    fun getAllOrders(): List<OrderQueryResponse> =
         orderQueryRepository.findAll()
             .toList()
-            .toDTOs()
+            .toResponses()
             .also { orders ->
                 logger.debug { "Found ${orders.size} total orders" }
             }

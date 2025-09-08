@@ -1,7 +1,7 @@
 package dev.denissajnar.command.integration
 
 import dev.denissajnar.command.SpringBootTestParent
-import dev.denissajnar.command.dto.CreateOrderCommandDTO
+import dev.denissajnar.command.dto.request.CreateOrderCommandRequest
 import dev.denissajnar.command.util.whenever
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
@@ -47,7 +47,7 @@ class EventSourcingControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should reconstruct aggregate successfully for existing order`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 1L,
             totalAmount = BigDecimal("99.99"),
         )
@@ -80,7 +80,7 @@ class EventSourcingControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should return event history for existing aggregate`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 2L,
             totalAmount = BigDecimal("149.99"),
         )
@@ -135,7 +135,7 @@ class EventSourcingControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should return aggregate stats for existing order`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 3L,
             totalAmount = BigDecimal("199.99"),
         )
@@ -181,7 +181,7 @@ class EventSourcingControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should replay events successfully for existing aggregate`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 4L,
             totalAmount = BigDecimal("249.99"),
         )
@@ -225,7 +225,7 @@ class EventSourcingControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should validate aggregate exists for existing order`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 5L,
             totalAmount = BigDecimal("299.99"),
         )
@@ -268,7 +268,7 @@ class EventSourcingControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should get latest version for existing aggregate`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 6L,
             totalAmount = BigDecimal("349.99"),
         )
@@ -309,7 +309,7 @@ class EventSourcingControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should get current aggregate state for existing order`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 8L,
             totalAmount = BigDecimal("199.99"),
         )
@@ -367,7 +367,7 @@ class EventSourcingControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should handle multiple operations on same aggregate`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 7L,
             totalAmount = BigDecimal("399.99"),
         )

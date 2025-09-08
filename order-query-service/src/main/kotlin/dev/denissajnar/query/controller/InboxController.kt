@@ -1,6 +1,6 @@
 package dev.denissajnar.query.controller
 
-import dev.denissajnar.query.dto.InboxStatsDTO
+import dev.denissajnar.query.dto.InboxStatsResponse
 import dev.denissajnar.query.entity.InboxEvent
 import dev.denissajnar.query.entity.ProcessingStatus
 import dev.denissajnar.query.service.InboxService
@@ -98,7 +98,7 @@ class InboxController(
             ApiResponse(responseCode = "500", description = "Internal server error"),
         ],
     )
-    fun getInboxStats(): ResponseEntity<InboxStatsDTO> =
+    fun getInboxStats(): ResponseEntity<InboxStatsResponse> =
         ResponseEntity.ok(inboxService.getInboxStats())
 
     /**
