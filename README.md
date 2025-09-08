@@ -11,17 +11,17 @@ Spring Boot, Kotlin, and event-driven architecture.
 
 ## 📋 Table of Contents
 
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Technologies](#technologies)
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [API Documentation](#api-documentation)
-- [Project Structure](#project-structure)
-- [Development](#development)
-- [Testing](#testing)
-- [Contributing](#contributing)
-- [License](#license)
+- [Overview](#-overview)
+- [Architecture](#-architecture)
+- [Technologies](#-technologies)
+- [Prerequisites](#-prerequisites)
+- [Quick Start](#-quick-start)
+- [API Documentation](#-api-documentation)
+- [Project Structure](#-project-structure)
+- [Development](#-development)
+- [Testing](#-testing)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ## 🔍 Overview
 
