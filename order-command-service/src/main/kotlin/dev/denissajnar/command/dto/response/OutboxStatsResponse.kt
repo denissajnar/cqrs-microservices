@@ -1,4 +1,4 @@
-package dev.denissajnar.command.dto
+package dev.denissajnar.command.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
 
@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema
  * DTO for outbox statistics
  */
 @Schema(description = "Outbox statistics response payload")
-data class OutboxStatsDTO(
+data class OutboxStatsResponse(
 
     @field:Schema(description = "Total number of events in the outbox", example = "100")
     val totalEvents: Int,

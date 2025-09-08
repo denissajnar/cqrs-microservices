@@ -1,6 +1,6 @@
 package dev.denissajnar.query.service
 
-import dev.denissajnar.query.dto.InboxStatsDTO
+import dev.denissajnar.query.dto.InboxStatsResponse
 import dev.denissajnar.query.entity.InboxEvent
 import dev.denissajnar.query.entity.ProcessingStatus
 import dev.denissajnar.query.repository.InboxEventRepository
@@ -42,14 +42,14 @@ class InboxService(
     /**
      * Gets inbox statistics for monitoring
      */
-    fun getInboxStats(): InboxStatsDTO {
+    fun getInboxStats(): InboxStatsResponse {
         val totalEvents = inboxEventRepository.count()
         val processedCount = inboxEventRepository.countByProcessingStatus(ProcessingStatus.PROCESSED)
         val failedCount = inboxEventRepository.countByProcessingStatus(ProcessingStatus.FAILED)
         val deferredCount = inboxEventRepository.countByProcessingStatus(ProcessingStatus.DEFERRED)
         val expiredCount = inboxEventRepository.countByProcessingStatus(ProcessingStatus.EXPIRED)
 
-        return InboxStatsDTO(
+        return InboxStatsResponse(
             totalEvents = totalEvents,
             processedEvents = processedCount,
             failedEvents = failedCount,

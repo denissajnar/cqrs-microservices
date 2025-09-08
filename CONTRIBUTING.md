@@ -161,17 +161,17 @@ class OrderCommandService(
     private val eventPublisher: EventPublisher,
     private val validator: OrderValidator,
 ) {
-    fun createOrder(dto: CreateOrderCommandDTO): OrderResponseDTO {
-        validator.validate(dto)
+    fun createOrder(request: CreateOrderCommandRequest): OrderResponse {
+        validator.validate(request)
 
         val command = OrderCommand(
-            customerId = dto.customerId,
-            totalAmount = dto.totalAmount,
+            customerId = request.customerId,
+            totalAmount = request.totalAmount,
             status = Status.PENDING,
         )
 
         return repository.save(command)
-            .let { mapper.toResponseDTO(it) }
+            .let { mapper.toResponse(it) }
             .also { eventPublisher.publish(OrderCreatedEvent(it.id, it.customerId)) }
     }
 }
@@ -312,24 +312,23 @@ data class OrderCreatedEvent(
 
 ```kotlin
 // Request DTOs - validation annotations
-data class CreateOrderCommandDTO(
+data class CreateOrderCommandRequest(
     @field:NotNull
-    @field:Positive
+    @field:Min(value = 1, message = "Customer ID must be positive")
     val customerId: Long,
 
     @field:NotNull
-    @field:DecimalMin("0.01")
+    @field:DecimalMin(value = "0.01", message = "Total amount must be positive")
     val totalAmount: BigDecimal,
 )
 
 // Response DTOs - complete data
-data class OrderResponseDTO(
+data class OrderResponse(
     val id: String,
     val customerId: Long,
     val totalAmount: BigDecimal,
     val status: Status,
     val createdAt: Instant,
-    val updatedAt: Instant,
 )
 ```
 
@@ -367,13 +366,13 @@ class OrderCommandServiceTest {
     @Test
     fun `should create order with valid data`() {
         // Given
-        val dto = CreateOrderCommandDTO(
+        val request = CreateOrderCommandRequest(
             customerId = 1L,
             totalAmount = BigDecimal("99.99")
         )
 
         // When
-        val result = service.createOrder(dto)
+        val result = service.createOrder(request)
 
         // Then
         assertThat(result.customerId).isEqualTo(1L)
@@ -384,14 +383,14 @@ class OrderCommandServiceTest {
     @Test
     fun `should throw exception for invalid customer ID`() {
         // Given
-        val dto = CreateOrderCommandDTO(
+        val request = CreateOrderCommandRequest(
             customerId = -1L,
             totalAmount = BigDecimal("99.99")
         )
 
         // When & Then
         assertThrows<BusinessValidationException> {
-            service.createOrder(dto)
+            service.createOrder(request)
         }
     }
 }
@@ -412,7 +411,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
     @Test
     fun `should create order and publish event`() {
         // Given
-        val request = CreateOrderCommandDTO(
+        val request = CreateOrderCommandRequest(
             customerId = 1L,
             totalAmount = BigDecimal("99.99")
         )
@@ -421,7 +420,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
         val response = restTemplate.postForEntity(
             "/api/v1/orders",
             request,
-            OrderResponseDTO::class.java
+            OrderResponse::class.java
         )
 
         // Then
@@ -455,9 +454,8 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 object OrderTestDataBuilder {
     fun createOrderCommand(
         customerId: Long = 1L,
-        totalAmount: BigDecimal = BigDecimal("99.99"),
-        status: Status = Status.PENDING
-    ) = CreateOrderCommandDTO(
+        totalAmount: BigDecimal = BigDecimal("99.99")
+    ) = CreateOrderCommandRequest(
         customerId = customerId,
         totalAmount = totalAmount
     )

@@ -1,8 +1,8 @@
 package dev.denissajnar.command.integration
 
 import dev.denissajnar.command.SpringBootTestParent
-import dev.denissajnar.command.dto.CreateOrderCommandDTO
-import dev.denissajnar.command.dto.UpdateOrderCommandDTO
+import dev.denissajnar.command.dto.request.CreateOrderCommandRequest
+import dev.denissajnar.command.dto.request.UpdateOrderCommandRequest
 import dev.denissajnar.command.util.whenever
 import dev.denissajnar.shared.model.Status
 import io.restassured.RestAssured
@@ -19,7 +19,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should create order successfully with valid data`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 1L,
             totalAmount = BigDecimal("99.99"),
         )
@@ -54,7 +54,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should return 400 when creating order with invalid customer id`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = -1L,
             totalAmount = BigDecimal("99.99"),
         )
@@ -73,7 +73,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should return 400 when creating order with invalid total amount`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 1L,
             totalAmount = BigDecimal("-10.00"),
         )
@@ -92,7 +92,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should update order successfully with valid data`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 1L,
             totalAmount = BigDecimal("99.99"),
         )
@@ -113,7 +113,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
         assert(outboxEventsAfterCreate.isNotEmpty()) { "Outbox should contain events after order creation" }
         assert(outboxEventsAfterCreate.any { it.eventType == "OrderEvent" }) { "Outbox should contain OrderEvent for created order" }
 
-        val updateOrderDto = UpdateOrderCommandDTO(
+        val updateOrderDto = UpdateOrderCommandRequest(
             customerId = 2L,
             totalAmount = BigDecimal("149.99"),
             status = Status.CONFIRMED,
@@ -151,7 +151,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should return 400 when updating order with invalid customer id`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 1L,
             totalAmount = BigDecimal("99.99"),
         )
@@ -168,7 +168,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
         val orderId = createResponse.path<String>("id")
 
-        val updateOrderDto = UpdateOrderCommandDTO(
+        val updateOrderDto = UpdateOrderCommandRequest(
             customerId = -1L,
             totalAmount = BigDecimal("149.99"),
             status = Status.CONFIRMED,
@@ -188,7 +188,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should return 404 when updating non-existent order`() {
-        val updateOrderDto = UpdateOrderCommandDTO(
+        val updateOrderDto = UpdateOrderCommandRequest(
             customerId = 1L,
             totalAmount = BigDecimal("149.99"),
             status = Status.CONFIRMED,
@@ -206,7 +206,7 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should delete order successfully`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 1L,
             totalAmount = BigDecimal("99.99"),
         )
@@ -260,12 +260,12 @@ class OrderCommandControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should handle concurrent order creation`() {
-        val createOrderDto1 = CreateOrderCommandDTO(
+        val createOrderDto1 = CreateOrderCommandRequest(
             customerId = 1L,
             totalAmount = BigDecimal("99.99"),
         )
 
-        val createOrderDto2 = CreateOrderCommandDTO(
+        val createOrderDto2 = CreateOrderCommandRequest(
             customerId = 2L,
             totalAmount = BigDecimal("149.99"),
         )

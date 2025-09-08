@@ -1,7 +1,7 @@
 package dev.denissajnar.command.integration
 
 import dev.denissajnar.command.SpringBootTestParent
-import dev.denissajnar.command.dto.CreateOrderCommandDTO
+import dev.denissajnar.command.dto.request.CreateOrderCommandRequest
 import dev.denissajnar.command.util.whenever
 import dev.denissajnar.shared.events.EventType
 import io.restassured.RestAssured
@@ -74,7 +74,7 @@ class OutboxControllerIntegrationTest : SpringBootTestParent() {
 
         val initialTotalEvents = initialStatsResponse.path<Int>("totalEvents")
 
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 1L,
             totalAmount = BigDecimal("99.99"),
         )
@@ -99,7 +99,7 @@ class OutboxControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should show unprocessed events after creating order`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 2L,
             totalAmount = BigDecimal("149.99"),
         )
@@ -124,7 +124,7 @@ class OutboxControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should validate outbox event structure in unprocessed events`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 3L,
             totalAmount = BigDecimal("199.99"),
         )
@@ -164,7 +164,7 @@ class OutboxControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should validate all events structure`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 4L,
             totalAmount = BigDecimal("249.99"),
         )
@@ -204,7 +204,7 @@ class OutboxControllerIntegrationTest : SpringBootTestParent() {
     @Test
     fun `should show processing rate calculation in stats`() {
         repeat(3) { index ->
-            val createOrderDto = CreateOrderCommandDTO(
+            val createOrderDto = CreateOrderCommandRequest(
                 customerId = (5 + index).toLong(),
                 totalAmount = BigDecimal("${(index + 1) * 50}.99"),
             )
@@ -270,7 +270,7 @@ class OutboxControllerIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should validate event types in outbox events`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 10L,
             totalAmount = BigDecimal("999.99"),
         )
@@ -303,7 +303,7 @@ class OutboxControllerIntegrationTest : SpringBootTestParent() {
     fun `should maintain event ordering by creation time`() {
         val orderIds = mutableListOf<String>()
         repeat(3) { index ->
-            val createOrderDto = CreateOrderCommandDTO(
+            val createOrderDto = CreateOrderCommandRequest(
                 customerId = (20 + index).toLong(),
                 totalAmount = BigDecimal("${(index + 1) * 100}.99"),
             )

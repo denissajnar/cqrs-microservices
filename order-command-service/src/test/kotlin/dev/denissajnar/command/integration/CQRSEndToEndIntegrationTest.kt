@@ -1,8 +1,8 @@
 package dev.denissajnar.command.integration
 
 import dev.denissajnar.command.SpringBootTestParent
-import dev.denissajnar.command.dto.CreateOrderCommandDTO
-import dev.denissajnar.command.dto.UpdateOrderCommandDTO
+import dev.denissajnar.command.dto.request.CreateOrderCommandRequest
+import dev.denissajnar.command.dto.request.UpdateOrderCommandRequest
 import dev.denissajnar.command.util.whenever
 import dev.denissajnar.shared.model.Status
 import io.restassured.RestAssured
@@ -19,7 +19,7 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should demonstrate comprehensive order creation workflow`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 1L,
             totalAmount = BigDecimal("99.99"),
         )
@@ -56,7 +56,7 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should demonstrate order update workflow with validation`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 2L,
             totalAmount = BigDecimal("149.99"),
         )
@@ -77,7 +77,7 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
         assert(outboxEventsAfterCreate.isNotEmpty()) { "Outbox should contain events after order creation" }
         assert(outboxEventsAfterCreate.any { it.eventType == "OrderEvent" }) { "Outbox should contain OrderEvent for created order" }
 
-        val updateOrderDto = UpdateOrderCommandDTO(
+        val updateOrderDto = UpdateOrderCommandRequest(
             customerId = 3L,
             totalAmount = BigDecimal("199.99"),
             status = Status.CONFIRMED,
@@ -116,7 +116,7 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should demonstrate order deletion workflow`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 4L,
             totalAmount = BigDecimal("79.99"),
         )
@@ -164,7 +164,7 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
         val orderIds = mutableListOf<String>()
 
         customers.forEach { customerId ->
-            val createOrderDto = CreateOrderCommandDTO(
+            val createOrderDto = CreateOrderCommandRequest(
                 customerId = customerId,
                 totalAmount = BigDecimal("${customerId * 10}.99"),
             )
@@ -191,7 +191,7 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
         assert(createOrderEvents.size >= customers.size) { "Outbox should contain at least ${customers.size} OrderEvent entries for batch creation" }
 
         orderIds.take(2).forEach { orderId ->
-            val updateOrderDto = UpdateOrderCommandDTO(
+            val updateOrderDto = UpdateOrderCommandRequest(
                 customerId = 999L,
                 totalAmount = BigDecimal("999.99"),
                 status = Status.PROCESSING,
@@ -224,7 +224,7 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should demonstrate error handling scenarios`() {
-        val invalidCreateOrderDto = CreateOrderCommandDTO(
+        val invalidCreateOrderDto = CreateOrderCommandRequest(
             customerId = -1L,
             totalAmount = BigDecimal("99.99"),
         )
@@ -238,7 +238,7 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
             .statusCode(400)
             .body("details[0]", containsString("Customer ID must be positive"))
 
-        val invalidAmountOrderDto = CreateOrderCommandDTO(
+        val invalidAmountOrderDto = CreateOrderCommandRequest(
             customerId = 1L,
             totalAmount = BigDecimal("-10.00"),
         )
@@ -252,7 +252,7 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
             .statusCode(400)
             .body("details[0]", containsString("Total amount must be positive"))
 
-        val updateOrderDto = UpdateOrderCommandDTO(
+        val updateOrderDto = UpdateOrderCommandRequest(
             customerId = 1L,
             totalAmount = BigDecimal("149.99"),
             status = Status.CONFIRMED,
@@ -269,7 +269,7 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
 
     @Test
     fun `should demonstrate RestAssured advanced features`() {
-        val createOrderDto = CreateOrderCommandDTO(
+        val createOrderDto = CreateOrderCommandRequest(
             customerId = 100L,
             totalAmount = BigDecimal("299.99"),
         )
@@ -305,7 +305,7 @@ class CQRSEndToEndIntegrationTest : SpringBootTestParent() {
         val orderIds = mutableListOf<String>()
 
         repeat(numberOfConcurrentOrders) { index ->
-            val createOrderDto = CreateOrderCommandDTO(
+            val createOrderDto = CreateOrderCommandRequest(
                 customerId = (200L + index),
                 totalAmount = BigDecimal("${50 + index * 10}.99"),
             )

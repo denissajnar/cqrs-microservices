@@ -1,7 +1,7 @@
 package dev.denissajnar.command.service
 
 import dev.denissajnar.command.domain.OutboxEvent
-import dev.denissajnar.command.dto.OutboxStatsDTO
+import dev.denissajnar.command.dto.response.OutboxStatsResponse
 import dev.denissajnar.command.repository.OutboxEventRepository
 import org.springframework.stereotype.Service
 
@@ -22,12 +22,12 @@ class OutboxService(
     /**
      * Gets outbox statistics for monitoring
      */
-    fun getOutboxStats(): OutboxStatsDTO {
+    fun getOutboxStats(): OutboxStatsResponse {
         val allEvents = outboxEventRepository.findAll().toList()
         val unprocessedCount = outboxEventRepository.findByProcessedFalseOrderByCreatedAtAsc().size
         val processedCount = allEvents.size - unprocessedCount
 
-        return OutboxStatsDTO(
+        return OutboxStatsResponse(
             totalEvents = allEvents.size,
             processedEvents = processedCount,
             unprocessedEvents = unprocessedCount,

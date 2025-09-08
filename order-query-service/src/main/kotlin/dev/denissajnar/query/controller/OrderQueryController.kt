@@ -1,6 +1,6 @@
 package dev.denissajnar.query.controller
 
-import dev.denissajnar.query.dto.OrderQueryDTO
+import dev.denissajnar.query.dto.OrderQueryResponse
 import dev.denissajnar.query.service.OrderQueryService
 import dev.denissajnar.shared.model.Status
 import io.swagger.v3.oas.annotations.Operation
@@ -41,7 +41,7 @@ class OrderQueryController(
     fun getOrder(
         @Parameter(description = "OrderQuery ID", example = "1")
         @PathVariable id: Long,
-    ): ResponseEntity<OrderQueryDTO> =
+    ): ResponseEntity<OrderQueryResponse> =
         orderQueryService.findOrderById(id)
             ?.let { order -> ResponseEntity.ok(order) }
             ?: ResponseEntity.notFound().build()
@@ -69,7 +69,7 @@ class OrderQueryController(
         @RequestParam(required = false) customerId: Long?,
         @Parameter(description = "Order status to filter by", example = "PENDING")
         @RequestParam(required = false) status: Status?,
-    ): ResponseEntity<List<OrderQueryDTO>> =
+    ): ResponseEntity<List<OrderQueryResponse>> =
         when {
             customerId != null && customerId < 0 -> ResponseEntity.badRequest().build()
             else -> {
@@ -114,7 +114,7 @@ class OrderQueryController(
             example = "550e8400-e29b-41d4-a716-446655440000",
         )
         @PathVariable orderId: String,
-    ): ResponseEntity<OrderQueryDTO> =
+    ): ResponseEntity<OrderQueryResponse> =
         when {
             orderId.isBlank() -> ResponseEntity.badRequest().build()
             else -> orderQueryService.findOrderByOrderId(orderId)
