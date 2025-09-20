@@ -1,6 +1,6 @@
 # CQRS Microservices - Order Management System
 
-[![Kotlin](https://img.shields.io/badge/kotlin-2.2.0-blue.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.2.10-blue.svg?logo=kotlin)](http://kotlinlang.org)
 [![Spring Boot](https://img.shields.io/badge/spring--boot-4.0.0--SNAPSHOT-brightgreen.svg?logo=springboot)](https://spring.io/projects/spring-boot)
 [![Java](https://img.shields.io/badge/java-21-blue.svg?logo=openjdk)](https://openjdk.org/)
 [![Gradle](https://img.shields.io/badge/gradle-9.0.0-blue.svg?logo=gradle)](https://gradle.org/)
@@ -41,7 +41,7 @@ communication, and different data storage optimized for each operation type.
 - **Message Queue**: RabbitMQ for reliable event processing
 - **API Documentation**: OpenAPI/Swagger integration
 - **Comprehensive Testing**: Unit and integration tests with Testcontainers
-- **Modern Tech Stack**: Spring Boot 4.0, Kotlin 2.2, Java 21
+- **Modern Tech Stack**: Spring Boot 4.0, Kotlin 2.2.10, Java 21
 
 ## 🏗️ Architecture
 
@@ -195,7 +195,7 @@ Query Service (Inbox Pattern):
 
 ## 🛠️ Technologies
 
-- **Language**: Kotlin 2.2.0
+- **Language**: Kotlin 2.2.10
 - **Framework**: Spring Boot 4.0.0-SNAPSHOT
 - **JVM**: Java 21
 - **Build Tool**: Gradle
